@@ -3,12 +3,19 @@
  */
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -24,6 +31,10 @@ public class VRPLoadingUnloadingMain {
 	private static Map<String, String> dest_src = new HashMap<String, String>();
 	private static List<String[]> validOrderings = new ArrayList<String[]>();
 	public static ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()-1);
+	private static String currentDirectory;
+	private static Queue<Query> queries = new LinkedList<Query>();
+	private static double interval_duration;
+	private static Runtime runtime;
 	
 	public static void main(String[] args) throws NumberFormatException, IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -47,8 +58,96 @@ public class VRPLoadingUnloadingMain {
 		sdOrdering.run();
 		System.out.println(validOrderings.size());
 		printOrderings();
+		
+		Rider rider = new Rider(n, n);
+		
 	}
-	
+
+	private static void create_query_bucket() throws IOException{
+		String query_file = currentDirectory + "/" + "Src-dest_" + Graph.get_vertex_count() +".txt";
+		File fin = new File(query_file);
+		BufferedReader br = new BufferedReader(new FileReader(fin));
+		String line = null;
+		while((line = br.readLine()) != null){
+			String[] entries = line.split("\t");
+			
+			Query query = new Query(Integer.parseInt(entries[0]), Integer.parseInt(entries[1]), Double.parseDouble(entries[2]), Double.parseDouble(entries[2])+interval_duration, Double.parseDouble(entries[3]));
+			queries.add(query);
+		}
+		br.close();
+	}
+
+	private static void extract_nodes() throws NumberFormatException, IOException{
+		String node_file = currentDirectory + "/" + "nodes_" + Graph.get_vertex_count() +".txt";
+		File fin = new File(node_file);
+		BufferedReader br = new BufferedReader(new FileReader(fin));
+		String line = null;
+		while((line = br.readLine()) != null){
+			String[] entries = line.split(" ");
+			
+			Node node = new Node(Double.parseDouble(entries[1]), Double.parseDouble(entries[2]));
+			Graph.add_node(Integer.parseInt(entries[0]), node);
+		}
+		br.close();
+	}
+
+	private static void extract_edges() throws NumberFormatException, IOException{
+		String edge_file = currentDirectory + "/" + "edges_" + Graph.get_vertex_count() +".txt";
+		File fin = new File(edge_file);
+		BufferedReader br = new BufferedReader(new FileReader(fin));
+		String line;
+		String[] time_series = null;
+
+		if((line = br.readLine()) != null){
+			time_series = line.split(" ");
+		}
+		
+		Graph.updateTimeSeries(time_series);
+
+		while((line = br.readLine()) != null){
+			String[] entries = null;
+			entries = line.split(" ");
+
+			int source = Integer.parseInt(entries[0]);
+			int destination = Integer.parseInt(entries[1]);
+			String travel_cost = entries[2];
+			String score = entries[3];
+			Edge edge = new Edge(source, destination);
+
+			String[] travel_costs = null;
+			String[] scores = null;
+
+			travel_costs = travel_cost.split(",");
+			scores = score.split(",");
+
+			for(int i=0;i<travel_costs.length;i++){
+				Properties properties = new Properties(Double.parseDouble(travel_costs[i]), Integer.parseInt(scores[i]));
+				edge.add_property(Integer.parseInt(time_series[i]), properties);
+			}
+
+			Graph.get_node(source).insert_outgoing_edge(edge);
+			Graph.get_node(destination).insert_incoming_edge(edge);
+		}
+		br.close();
+	}
+
+	private static void query_processing() throws IOException, InterruptedException, ExecutionException{
+		String output_file = "Output_" + Graph.get_vertex_count() +".txt";
+		FileWriter fout = new FileWriter(output_file);
+		BufferedWriter writer = new BufferedWriter(fout);
+		
+		
+		runtime = Runtime.getRuntime();
+		//int index=0;
+		while(!queries.isEmpty()){
+			
+			queries.poll();
+		}
+		writer.close();
+		fout.close();
+		System.out.println("All query processing is done.");
+	}
+
 	private static void printOrderings() {
 		for(String[] ordering: validOrderings) {
 			for(int i=0;i<2*n;i++)
