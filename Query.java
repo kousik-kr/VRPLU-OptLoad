@@ -1,36 +1,49 @@
+import java.util.HashMap;
+import java.util.Map;
 
 class Query {
-	private int source;
-	private	int destination;
-	private	double start_departure_time;
-	private	double end_departure_time;
-	private	double budget;
+	private Point depot;
+	private int capacity;
+	private Map<Integer, Service> service_requests;
+	private	TimeWindow working_time;
 
-	public int get_source(){
-		return source;
+	public Point getDepot(){
+		return this.depot;
 	}
 
-	public int get_destination(){
-		return destination;
+	public Map<Integer, Service> getServices(){
+		return this.service_requests;
+	}
+	
+	public int getCapacity(){
+		return this.capacity;
 	}
 
-	public double get_start_departure_time(){
-		return start_departure_time;
+	public double getWorkingDuration(){
+		return this.working_time.getEndTime()-this.working_time.getStartTime();
 	}
 
-	public double get_end_departure_time(){
-		return end_departure_time;
+	public Service getService(int id){
+		return this.service_requests.get(id);
+	}
+	
+	public int getNumberofRequests() {
+		return this.service_requests.size();
 	}
 
-	public double get_budget(){
-		return budget;
+	public double getQueryStartTime() {
+		return this.working_time.getStartTime();
 	}
 
-	public Query(int src, int dest, double s_dep_time, double e_dep_time, double b){
-		this.source = src;
-		this.destination = dest;
-		this.start_departure_time = s_dep_time;
-		this.end_departure_time = e_dep_time;
-		this.budget = b;
+	public double getQueryEndTime() {
+		return this.working_time.getEndTime();
+	}
+	
+	public Query(Point d, int c, TimeWindow time, Map<Integer, Service> services){
+		this.depot = d;
+		this.capacity = c;
+		this.working_time = time;
+		this.service_requests = new HashMap<Integer, Service>();
+		this.service_requests.putAll(services);
 	}
 }

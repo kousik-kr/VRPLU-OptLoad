@@ -8,6 +8,7 @@ class Edge {
 	private	int destination;
 	private	boolean iterable = false;
 	private	NavigableMap<Integer, Properties> edge_property;
+	private double distance;
 	
 	public int get_source(){
 		return this.source;
@@ -26,10 +27,15 @@ class Edge {
 	public boolean get_iterability(){
 		return this.iterable;
 	}
+	
+	public double getDistance() {
+		return this.distance;
+	}
 
-	public Edge(int src, int dest){
+	public Edge(int src, int dest, double dist){
 		this.source = src;
 		this.destination = dest;
+		this.distance = dist;
 		this.edge_property = new TreeMap<Integer, Properties>();
 	}
 

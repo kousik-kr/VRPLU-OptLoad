@@ -1,10 +1,7 @@
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Map.Entry;
 
 class Graph {
 	private static int n_vertexes;
@@ -56,63 +53,11 @@ class Graph {
 	public static Node get_node(int node_id){
 		return adjacency_list.get(node_id);
 	}
-	
-	public static void reset_blabeling() {
-		for(Entry<Integer, Node> entry: adjacency_list.entrySet()) {
-			entry.getValue().reset_blabeling();
-		}
-	}
-	
-	public static void compute_backward_reachebility(int source, int destination, double end_departure_time, double budget){
-		PriorityQueue<Integer> pQueue = new PriorityQueue<Integer>(get_vertex_count(), new Comparator<Integer>(){
-			@Override
-        	public int compare(Integer i, Integer j){
-				
-                if(get_node(i).get_backward_label() < get_node(j).get_backward_label()){
-                    return 1;
-                }
-                else if (get_node(i).get_backward_label() > get_node(j).get_backward_label()){
-                    return -1;
-                }
-                return 0;
-            }
-		});
-
-		double end_time_limit = end_departure_time + budget;
-		
-		get_node(destination).set_blabeling(end_time_limit);
-		pQueue.add(destination);
-		//Main.updateSubgraph(destination);
-		
-		while(!pQueue.isEmpty()) {
-
-			int current_vertex = pQueue.peek();
-			Node node = get_node(current_vertex);
-			double current_time = node.get_backward_label();
-			
-			Map<Integer, Edge> temp_incoming_edge = node.get_incoming_edges();
-			
-			for(Entry<Integer, Edge> entry : temp_incoming_edge.entrySet()) {
-				
-				Edge edge = entry.getValue();
-				int j = edge.get_source();
-				double departure_time_j = edge.get_departure_time(current_time);
-				
-				if((departure_time_j - get_node(source).euclidean_distance(get_node(j))/Rider.MAX_SPEED) >= end_departure_time) {
-					
-					if((get_node(j).is_reacheble() && get_node(j).get_backward_label()<departure_time_j) || !get_node(j).is_reacheble()) {
-						
-//						if (!Graph.get_node(j).is_reacheble()) {
-//							Main.updateSubgraph(j);
-//						}
-						get_node(j).set_blabeling(departure_time_j);
-						pQueue.add(j);
-					}
-				}
-			}
-			
-			pQueue.poll();
-		}
-		
-	}
+//	
+//	public static void reset_blabeling() {
+//		for(Entry<Integer, Node> entry: adjacency_list.entrySet()) {
+//			entry.getValue().reset_blabeling();
+//		}
+//	}
+//	
 }

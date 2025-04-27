@@ -6,25 +6,26 @@ class Node {
 	private	Map<Integer, Edge> incoming_edges;
 	private	double latitude;
 	private	double longitude;
-	private boolean backward_reachebility;
-	private double backward_label;
-	
-	public void set_blabeling(double label) {
-		this.backward_reachebility = true;
-		this.backward_label = label;
-	}
-	
-	public boolean is_reacheble() {
-		return this.backward_reachebility;
-	}
-	
-	public double get_backward_label() {
-		return this.backward_label;
-	}
-	
-	public void reset_blabeling() {
-		this.backward_reachebility = false;
-	}
+	private int nodeID;
+//	private boolean backward_reachebility;
+//	private double backward_label;
+//	
+//	public void set_blabeling(double label) {
+//		this.backward_reachebility = true;
+//		this.backward_label = label;
+//	}
+//	
+//	public boolean is_reacheble() {
+//		return this.backward_reachebility;
+//	}
+//	
+//	public double get_backward_label() {
+//		return this.backward_label;
+//	}
+//	
+//	public void reset_blabeling() {
+//		this.backward_reachebility = false;
+//	}
 	
 	public double get_latitude(){
 		return latitude;
@@ -49,6 +50,10 @@ class Node {
 	public Map<Integer, Edge> get_outgoing_edges(){
 		return outgoing_edges;
 	}
+	
+	public int getNodeID() {
+		return this.nodeID;
+	}
 
 	public double euclidean_distance(Node node){
 		double x1 = latitude;
@@ -59,10 +64,10 @@ class Node {
 		return Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2));
 	}
 
-	public Node(double lat, double longi){
+	public Node(int n, double lat, double longi){
 		this.latitude = lat;
 		this.longitude = longi;
-		this.backward_reachebility = false;
+		this.nodeID = n;
 		this.incoming_edges = new HashMap<Integer, Edge>();
 		this.outgoing_edges = new HashMap<Integer, Edge>();
 	}
