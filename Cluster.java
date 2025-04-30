@@ -6,6 +6,7 @@ class Cluster {
 	private double start_time=0;
 	private double end_time=0;
 	private double center;
+	private List<List<Point>> valid_orderings;
 	
 	public Cluster() {
 		points = new ArrayList<Point>();
@@ -16,6 +17,10 @@ class Cluster {
 		updateStartTime(point);
 		updateEndTime(point);
 		updateCenter();
+	}
+	
+	public void computeValidOrderings() {
+		this.valid_orderings = new ArrayList<List<Point>>();
 	}
 
 	private void updateCenter() {
@@ -46,5 +51,23 @@ class Cluster {
 	
 	public double getCenter() {
 		return this.center;
+	}
+	
+	public List<Point> getPoints(){
+		return this.points;
+	}
+
+	public int getSize() {
+		return this.points.size();
+	}
+
+	public double getCounter(double d) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public double getMinCounter() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }
