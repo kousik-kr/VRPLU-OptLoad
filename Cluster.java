@@ -1,5 +1,7 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 class Cluster {
 	List<Point> points;
@@ -7,6 +9,7 @@ class Cluster {
 	private double end_time=0;
 	private double center;
 	private List<List<Point>> valid_orderings;
+	private int available_capacity;
 	
 	public Cluster() {
 		points = new ArrayList<Point>();
@@ -19,10 +22,41 @@ class Cluster {
 		updateCenter();
 	}
 	
-	public void computeValidOrderings() {
+	public void setAvailableCapacity(int capacity) {
+		this.available_capacity = capacity;
+	}
+	
+	public void computeConsumption(Map<Integer,Point> current_pickups) {
+		for(Point point:this.points) {
+			if(point.getType()=="Source") {
+				current_pickups.put(point.getID(), point);
+			}
+			else {
+				current_pickups.remove(point.getID());
+			}
+		}
+			
+	}
+	
+	public List<List<Point>> computeValidOrderings() {//TODO need to put the capacity and  s-d constraints
 		this.valid_orderings = new ArrayList<List<Point>>();
+		permute(0);
+		return this.valid_orderings;
 	}
 
+    private void permute(int start) {
+        if (start == this.points.size() - 1) {
+        	this.valid_orderings.add(new ArrayList<>(this.points));
+            return;
+        }
+        for (int i = start; i < this.points.size(); i++) {
+            Collections.swap(this.points, i, start);
+            permute(start + 1);
+            Collections.swap(this.points, i, start); // backtrack
+        }
+    }
+
+	
 	private void updateCenter() {
 		this.center = (this.start_time+this.end_time)/2;
 		
