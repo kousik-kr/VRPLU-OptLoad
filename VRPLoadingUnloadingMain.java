@@ -37,6 +37,7 @@ public class VRPLoadingUnloadingMain {
 	private static Runtime runtime;
 	public static final int START_WORKING_HOUR = 540;
 	public static final int END_WORKING_HOUR = 1140;
+	public static final int SPLIT_THR = 2;
 	
 	public static void main(String[] args) throws NumberFormatException, IOException {
 //		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
