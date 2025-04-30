@@ -1,5 +1,5 @@
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,7 +71,60 @@ class Rider {
 	}
 
 	private void findValidOrdernings() {
-		// TODO Auto-generated method stub
+		for(Cluster cluster:disjoint_clusters) {
+			
+		}
+		
+		List<List<List<String>>> allPermutedLists = new ArrayList<>();
+        for (List<String> list : inputLists) {
+            allPermutedLists.add(getPermutations(list));
+        }
+
+        // Step 2: Compute the cross product of the permuted lists
+        List<List<String>> result = new ArrayList<>();
+        generateCrossProduct(allPermutedLists, 0, new ArrayList<>(), result);
+
+        // Output
+        for (List<String> combination : result) {
+            System.out.println(combination);
+        }
+    }
+
+    // Generate all permutations of a list
+    public static List<List<String>> getPermutations(List<String> list) {
+        List<List<String>> result = new ArrayList<>();
+        permute(list, 0, result);
+        return result;
+    }
+
+    private static void permute(List<String> list, int start, List<List<String>> result) {
+        if (start == list.size() - 1) {
+            result.add(new ArrayList<>(list));
+            return;
+        }
+        for (int i = start; i < list.size(); i++) {
+            Collections.swap(list, i, start);
+            permute(list, start + 1, result);
+            Collections.swap(list, i, start); // backtrack
+        }
+    }
+
+    // Recursively build the cross product of the permuted lists
+    private static void generateCrossProduct(List<List<List<String>>> allPermutedLists, int depth,
+                                             List<String> current, List<List<String>> result) {
+        if (depth == allPermutedLists.size()) {
+            result.add(new ArrayList<>(current));
+            return;
+        }
+
+        for (List<String> permutation : allPermutedLists.get(depth)) {
+            current.addAll(permutation);
+            generateCrossProduct(allPermutedLists, depth + 1, current, result);
+            for (int i = 0; i < permutation.size(); i++) {
+                current.remove(current.size() - 1); // backtrack
+            }
+        }
+
 		
 	}
 
@@ -88,16 +141,15 @@ class Rider {
             } else {
                 active.remove(point.getID());
                 if (active.isEmpty()) {
-                    List<Point> current_cluster = new ArrayList<Point>();
+                    Cluster current_cluster = new Cluster();
                     for (int idx : currentCluster) {
-                    	current_cluster.add(sorted_list.get(idx));
+                    	current_cluster.addPoint(sorted_list.get(idx));
                     }
                     if(currentCluster.size()>this.max_size) {
                     		disjoint_clusters.addAll(SplitCluster(current_cluster));
                     }
                     else {
-	                    	Cluster cluster = new Cluster();
-	                    	disjoint_clusters.add(cluster);
+	                    	disjoint_clusters.add(current_cluster);
                     }
 	                currentCluster.clear();
                 }
@@ -107,54 +159,72 @@ class Rider {
 	
 	
 
-	private List<Cluster> SplitCluster(List<Point> current_cluster) {
-		
-		double split_point = FindScope(current_cluster);
+	private List<Cluster> SplitCluster(Cluster currentCluster) {
+		List<Point> current_cluster = currentCluster.getPoints();
+		double split_point = FindScope(currentCluster);
 		List<Cluster> clusters = new ArrayList<Cluster>();
-		List<Point> left_cluster = new ArrayList<Point>();
-		List<Point> right_cluster = new ArrayList<Point>();
+		Cluster left_cluster = new Cluster();
+		Cluster right_cluster = new Cluster();
 		List<Point> overlapping_points = new ArrayList<Point>();
 		
 		for(Point point: current_cluster) {
 			if(point.getTimeWindow().getEndTime()<=split_point) {
-				left_cluster.add(point);
+				left_cluster.addPoint(point);
 			}
 			else if(point.getTimeWindow().getStartTime()>split_point) {
-				right_cluster.add(point);
+				right_cluster.addPoint(point);
 			}
 			else
 				overlapping_points.add(point);
 		}
 			
 		for(Point point: overlapping_points) {
-			
+			decideSide(point, left_cluster,right_cluster);
 		}
 		
-		if(left_cluster.size()>this.max_size) {
+		if(left_cluster.getSize()>this.max_size) {
 			clusters.addAll(SplitCluster(left_cluster));
 		}
 		else {
-			Cluster leftCluster = new Cluster();
-			for(Point point:left_cluster)
-				leftCluster.addPoint(point);
-			clusters.add(leftCluster);
+			clusters.add(left_cluster);
 		}
 		
 		
-		if(right_cluster.size()>this.max_size) {
+		if(right_cluster.getSize()>this.max_size) {
 			clusters.addAll(SplitCluster(right_cluster));
 		}
 		else {
-			Cluster rightCluster = new Cluster();
-			for(Point point:right_cluster)
-				rightCluster.addPoint(point);
-			clusters.add(rightCluster);
+			clusters.add(right_cluster);
 		}
 		return clusters;
 	}
 
-	private double FindScope(List<Point> current_cluster) {
-		// TODO Auto-generated method stub
+	private void decideSide(Point point, Cluster left_cluster, Cluster right_cluster) {
+		double c_left = left_cluster.getCenter();
+		double c_right = right_cluster.getCenter();
+		double c_point = point.getTimeWindow().getCenter();
+		double dist_left = Math.abs(c_point-c_left);
+		double dist_right = Math.abs(c_point-c_right);
+		
+		if(dist_left<dist_right)
+			left_cluster.addPoint(point);
+		else 
+			right_cluster.addPoint(point);
+			
+		
+	}
+
+	private double FindScope(Cluster current_cluster) {
+		double center = current_cluster.getCenter();
+		double range_from_center = center - current_cluster.getStartTime();
+		for(double i=0;i<range_from_center;i++) {
+			if(current_cluster.getCounter(center-i)<=current_cluster.getMinCounter()+VRPLoadingUnloadingMain.SPLIT_THR) {
+				return (center-i);
+			}
+			else if(current_cluster.getCounter(center+i)<=current_cluster.getMinCounter()+VRPLoadingUnloadingMain.SPLIT_THR){
+				return (center+i);
+			}
+		}
 		return 0;
 	}
 
