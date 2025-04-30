@@ -14,4 +14,8 @@ class TimeWindow {
 	public double getEndTime() {
 		return this.end_time;
 	}
+	
+	public double getCenter() {
+		return (this.start_time+this.end_time)/2;
+	}
 }
