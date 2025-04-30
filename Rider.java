@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,55 +70,41 @@ class Rider {
 	}
 
 	private void findValidOrdernings() {
-		for(Cluster cluster:disjoint_clusters) {
-			
-		}
 		
-		List<List<List<String>>> allPermutedLists = new ArrayList<>();
-        for (List<String> list : inputLists) {
-            allPermutedLists.add(getPermutations(list));
-        }
+		Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
+		
+		List<List<List<Point>>> allPermutedLists = new ArrayList<>();
+		for(Cluster cluster:disjoint_clusters) {
+			int current_consumption = 0;
+			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
+				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
+			}
+			
+			cluster.setAvailableCapacity(this.max_capacity-current_consumption);
+			
+			allPermutedLists.add(cluster.computeValidOrderings());
+			cluster.computeConsumption(current_consumptions);
+		}
+	
+        generateCrossProduct(allPermutedLists, 0, new ArrayList<>());
 
-        // Step 2: Compute the cross product of the permuted lists
-        List<List<String>> result = new ArrayList<>();
-        generateCrossProduct(allPermutedLists, 0, new ArrayList<>(), result);
-
-        // Output
-        for (List<String> combination : result) {
-            System.out.println(combination);
-        }
-    }
-
-    // Generate all permutations of a list
-    public static List<List<String>> getPermutations(List<String> list) {
-        List<List<String>> result = new ArrayList<>();
-        permute(list, 0, result);
-        return result;
-    }
-
-    private static void permute(List<String> list, int start, List<List<String>> result) {
-        if (start == list.size() - 1) {
-            result.add(new ArrayList<>(list));
-            return;
-        }
-        for (int i = start; i < list.size(); i++) {
-            Collections.swap(list, i, start);
-            permute(list, start + 1, result);
-            Collections.swap(list, i, start); // backtrack
+        
+        for (List<Point> combination : this.valid_orderings) {
+            combination.add(0, this.depot);
+            combination.add(0, this.depot);
         }
     }
 
-    // Recursively build the cross product of the permuted lists
-    private static void generateCrossProduct(List<List<List<String>>> allPermutedLists, int depth,
-                                             List<String> current, List<List<String>> result) {
+    private void generateCrossProduct(List<List<List<Point>>> allPermutedLists, int depth,
+                                             List<Point> current) {
         if (depth == allPermutedLists.size()) {
-            result.add(new ArrayList<>(current));
+        	this.valid_orderings.add(new ArrayList<>(current));
             return;
         }
 
-        for (List<String> permutation : allPermutedLists.get(depth)) {
+        for (List<Point> permutation : allPermutedLists.get(depth)) {
             current.addAll(permutation);
-            generateCrossProduct(allPermutedLists, depth + 1, current, result);
+            generateCrossProduct(allPermutedLists, depth + 1, current);
             for (int i = 0; i < permutation.size(); i++) {
                 current.remove(current.size() - 1); // backtrack
             }
@@ -134,12 +119,14 @@ class Rider {
         Set<Integer> currentCluster = new HashSet<>();
         
         for (Entry<Integer, Point> entry : sorted_list.entrySet()) {
-        		Point point = entry.getValue();
-        		if (point.getType()=="Source") {
+    		Point point = entry.getValue();
+    		int left_count =0, min_overlapping;
+    		if (point.getType()=="Source") {
                 active.add(point.getID());
                 currentCluster.add(point.getID());
             } else {
                 active.remove(point.getID());
+                left_count++;
                 if (active.isEmpty()) {
                     Cluster current_cluster = new Cluster();
                     for (int idx : currentCluster) {
@@ -152,6 +139,9 @@ class Rider {
 	                    	disjoint_clusters.add(current_cluster);
                     }
 	                currentCluster.clear();
+	                left_count =0;
+                }else {
+                	min_overlapping = active.size();
                 }
             }
         }
