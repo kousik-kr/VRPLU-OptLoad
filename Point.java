@@ -5,11 +5,17 @@ class Point {
 	private int service_id;
 	private Service object = null;
 	
-	public Point(Service obj, int id, Node n, TimeWindow t, String type) {
-		this.service_id = id;
+	public Point(Node n, TimeWindow t, String type) {
 		this.node = n;
 		this.time_window = t;
 		this.point_type = type;
+	}
+	
+	public void setID(int id) {
+		this.service_id = id;
+	}
+	
+	public void setServiceObject(Service obj) {
 		this.object = obj;
 	}
 

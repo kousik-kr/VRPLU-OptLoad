@@ -8,13 +8,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -33,11 +29,10 @@ public class VRPLoadingUnloadingMain {
 	public static ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()-1);
 	private static String currentDirectory;
 	private static Queue<Query> queries = new LinkedList<Query>();
-	private static double interval_duration;
-	private static Runtime runtime;
 	public static final int START_WORKING_HOUR = 540;
 	public static final int END_WORKING_HOUR = 1140;
 	public static final int SPLIT_THR = 2;
+	private static final int MAX_CLUSTER_SIZE = 3;
 	
 	public static void main(String[] args) throws NumberFormatException, IOException {
 //		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -84,13 +79,61 @@ public class VRPLoadingUnloadingMain {
 		String query_file = currentDirectory + "/" + "Src-dest_" + Graph.get_vertex_count() +".txt";
 		File fin = new File(query_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
-		String line = null;
-		while((line = br.readLine()) != null){
-			String[] entries = line.split("\t");
-			
-			Query query = new Query(Integer.parseInt(entries[0]), Integer.parseInt(entries[1]), Double.parseDouble(entries[2]), Double.parseDouble(entries[2])+interval_duration, Double.parseDouble(entries[3]));
-			queries.add(query);
-		}
+		
+		try {
+            String line;
+            Query current_query = null;
+
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+
+                if (line.startsWith("D")) {
+                    if (current_query != null) {
+                        queries.add(current_query); // save previous block
+                    }
+                    current_query = new Query();
+                    TimeWindow depot_timewindow = new TimeWindow(START_WORKING_HOUR, END_WORKING_HOUR);
+                    Node depot_node = Graph.get_node(Integer.parseInt(line.split(" ")[1]));
+                    
+                    Point depot = new Point(depot_node, depot_timewindow, "Depot");
+                    current_query.setDepot(depot);
+                    
+                } 
+                else if (line.startsWith("C") && current_query != null) {
+                	current_query.setCapacity(Integer.parseInt(line.split(" ")[1]));
+                } 
+                else if (line.startsWith("S") && current_query != null) {
+                    String[] parts = line.split(" ");
+                    int source = Integer.parseInt(parts[1].split(",")[0]);
+                    int destination = Integer.parseInt(parts[1].split(",")[1]);
+                    
+                    TimeWindow start = new TimeWindow(Double.parseDouble(parts[2].split(",")[0]), Double.parseDouble(parts[2].split(",")[1]));
+                    TimeWindow end = new TimeWindow(Double.parseDouble(parts[3].split(",")[0]), Double.parseDouble(parts[3].split(",")[1]));
+                    
+                    Point start_point = new Point(Graph.get_node(source), start, "Source");
+                    Point end_point = new Point(Graph.get_node(destination), end, "Destination");
+                    
+                    int capacity = Integer.parseInt(parts[parts.length - 1]);
+                    Service new_service = new Service(start_point, end_point, capacity);
+                    int service_id = current_query.addServices(new_service);
+                    
+                    start_point.setServiceObject(new_service);
+                    end_point.setServiceObject(new_service);
+                    
+                    start_point.setID(service_id);
+                    end_point.setID(service_id);
+                }
+            }
+
+            if (current_query != null) {
+                queries.add(current_query); // add the last block
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+		
 		br.close();
 	}
 
@@ -102,7 +145,7 @@ public class VRPLoadingUnloadingMain {
 		while((line = br.readLine()) != null){
 			String[] entries = line.split(" ");
 			
-			Node node = new Node(Double.parseDouble(entries[1]), Double.parseDouble(entries[2]));
+			Node node = new Node(Integer.parseInt(entries[0]), Double.parseDouble(entries[1]), Double.parseDouble(entries[2]));
 			Graph.add_node(Integer.parseInt(entries[0]), node);
 		}
 		br.close();
@@ -129,7 +172,8 @@ public class VRPLoadingUnloadingMain {
 			int destination = Integer.parseInt(entries[1]);
 			String travel_cost = entries[2];
 			String score = entries[3];
-			Edge edge = new Edge(source, destination);
+			double distance = Double.parseDouble(entries[4]);
+			Edge edge = new Edge(source, destination, distance);
 
 			String[] travel_costs = null;
 			String[] scores = null;
@@ -153,12 +197,10 @@ public class VRPLoadingUnloadingMain {
 		FileWriter fout = new FileWriter(output_file);
 		BufferedWriter writer = new BufferedWriter(fout);
 		
-		
-		runtime = Runtime.getRuntime();
 		//int index=0;
 		while(!queries.isEmpty()){
 			long start = System.currentTimeMillis();
-			Rider rider =  new Rider(queries.peek());
+			Rider rider =  new Rider(queries.peek(),MAX_CLUSTER_SIZE);
 			Ordering output_order = rider.getFinalOrder();
 			
 			long end = System.currentTimeMillis();

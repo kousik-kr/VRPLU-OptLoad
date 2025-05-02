@@ -39,11 +39,25 @@ class Query {
 		return this.working_time.getEndTime();
 	}
 	
-	public Query(Point d, int c, TimeWindow time, Map<Integer, Service> services){
+	public void setDepot(Point d) {
 		this.depot = d;
+	}
+	
+	public void setCapacity(int c) {
 		this.capacity = c;
+	}
+	
+	public void setTimeWindow(TimeWindow time) {
 		this.working_time = time;
+	}
+	
+	public int addServices(Service service) {
+		int id = this.service_requests.size()+1;
+		this.service_requests.put(id, service);
+		return id;
+	}
+	
+	public Query(){
 		this.service_requests = new HashMap<Integer, Service>();
-		this.service_requests.putAll(services);
 	}
 }

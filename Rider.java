@@ -1,12 +1,10 @@
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
-import java.util.Set;
 
 class Rider {
 	private Ordering final_order = null;
@@ -58,10 +56,10 @@ class Rider {
 			minHeap.add(entry.getValue().getEndPoint());
 		}
 		
-		Map<Integer,Point> sorted_list = new HashMap<Integer,Point>();
+		List<Point> sorted_list = new ArrayList<Point>();
 		while(minHeap.size()>0) {
 			Point point = minHeap.poll();
-			sorted_list.put(point.getID(), point);
+			sorted_list.add(point);
 		}
 		sweepLine(sorted_list);
 		findValidOrdernings();
@@ -91,7 +89,7 @@ class Rider {
         
         for (List<Point> combination : this.valid_orderings) {
             combination.add(0, this.depot);
-            combination.add(0, this.depot);
+            combination.add(this.depot);
         }
     }
 
@@ -114,40 +112,47 @@ class Rider {
 	}
 
 	//to compute disjoint clusters
-	private void sweepLine(Map<Integer, Point> sorted_list) {
-		Set<Integer> active = new HashSet<>();
-        Set<Integer> currentCluster = new HashSet<>();
-        
-        for (Entry<Integer, Point> entry : sorted_list.entrySet()) {
-    		Point point = entry.getValue();
-    		int left_count =0, min_overlapping;
-    		if (point.getType()=="Source") {
-                active.add(point.getID());
-                currentCluster.add(point.getID());
+	private void sweepLine(List<Point> sorted_list) {
+		List<Point> currentCluster = new ArrayList<Point>();
+        double clusterEnd = Double.NEGATIVE_INFINITY;
+
+        for (Point point : sorted_list) {
+        	TimeWindow interval = point.getTimeWindow();
+        	
+            if (interval.getStartTime() <= clusterEnd) {
+                // Overlaps with current cluster
+                currentCluster.add(point);
+                clusterEnd = Math.max(clusterEnd, interval.getEndTime());
             } else {
-                active.remove(point.getID());
-                left_count++;
-                if (active.isEmpty()) {
-                    Cluster current_cluster = new Cluster();
-                    for (int idx : currentCluster) {
-                    	current_cluster.addPoint(sorted_list.get(idx));
-                    }
-                    if(currentCluster.size()>this.max_size) {
-                    		disjoint_clusters.addAll(SplitCluster(current_cluster));
-                    }
-                    else {
-	                    	disjoint_clusters.add(current_cluster);
-                    }
-	                currentCluster.clear();
-	                left_count =0;
-                }else {
-                	min_overlapping = active.size();
+                // No overlap; start a new cluster
+                if (!currentCluster.isEmpty()) {
+                	addToCluster(currentCluster);
                 }
+                currentCluster.clear();
+                currentCluster.add(point);
+                clusterEnd = interval.getEndTime();
             }
         }
+
+        if (!currentCluster.isEmpty()) {
+        	addToCluster(currentCluster);
+        }
+
 	}
-	
-	
+
+	private void addToCluster(List<Point> currentCluster) {
+		Cluster current_cluster = new Cluster();
+        for (Point current_point : currentCluster) {
+        	current_cluster.addPoint(current_point);
+        }
+        if(currentCluster.size()>this.max_size) {
+        		disjoint_clusters.addAll(SplitCluster(current_cluster));
+        }
+        else {
+            	disjoint_clusters.add(current_cluster);
+        }
+		
+	}
 
 	private List<Cluster> SplitCluster(Cluster currentCluster) {
 		List<Point> current_cluster = currentCluster.getPoints();
@@ -206,6 +211,8 @@ class Rider {
 
 	private double FindScope(Cluster current_cluster) {
 		double center = current_cluster.getCenter();
+		current_cluster.computeMinOverlappingPoint();
+		
 		double range_from_center = center - current_cluster.getStartTime();
 		for(double i=0;i<range_from_center;i++) {
 			if(current_cluster.getCounter(center-i)<=current_cluster.getMinCounter()+VRPLoadingUnloadingMain.SPLIT_THR) {
