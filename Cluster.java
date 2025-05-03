@@ -1,8 +1,10 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 class Cluster {
 
@@ -95,23 +97,76 @@ class Cluster {
 			
 	}
 	
-	public List<List<Point>> computeValidOrderings() {//TODO need to put the capacity and  s-d constraints
+	public List<List<Point>> computeValidOrderings() {
 		this.valid_orderings = new ArrayList<List<Point>>();
-		permute(0);
+		boolean[] used = new boolean[this.points.size()];
+        backtrack(new ArrayList<>(), used, new HashSet<>(), this.valid_orderings);
+        filterOutBasedOnCapacity();
 		return this.valid_orderings;
 	}
 
-    private void permute(int start) {
-        if (start == this.points.size() - 1) {
-        	this.valid_orderings.add(new ArrayList<>(this.points));
-            return;
-        }
-        for (int i = start; i < this.points.size(); i++) {
-            Collections.swap(this.points, i, start);
-            permute(start + 1);
-            Collections.swap(this.points, i, start); // backtrack
-        }
-    }
+	private void filterOutBasedOnCapacity() {
+		List<List<Point>> updated_orderings = new ArrayList<List<Point>>();
+		for(List<Point> ordering: this.valid_orderings) {
+			if(checkValidity(ordering)) {
+				updated_orderings.add(ordering);
+			}
+		}
+		this.valid_orderings.clear();
+		this.valid_orderings.addAll(updated_orderings);
+	}
+
+	private boolean checkValidity(List<Point> ordering) {
+		int current_consumption = 0;
+		Map<Integer,Point> current_pickups = new HashMap<Integer, Point>();
+		for(Point point: ordering) {
+			if(point.getType()=="Source") {
+				current_pickups.put(point.getID(), point);
+				current_consumption += point.getServiceObject().getServiceQuantity();
+			}
+			else if(point.getType()=="Destination") {
+				if(current_pickups.containsKey(point.getID()))
+					current_pickups.remove(point.getID());
+				current_consumption -= point.getServiceObject().getServiceQuantity();
+			}
+			
+			if(current_consumption>this.available_capacity)
+				return false;
+		}
+		return true;
+	}
+
+	private void backtrack(List<Point> current, boolean[] used, Set<Integer> sourcesAdded, List<List<Point>> result) {
+		if (current.size() == points.size()) {
+			result.add(new ArrayList<>(current));
+			return;
+		}
+		
+		for (int i = 0; i < points.size(); i++) {
+			if (used[i]) continue;
+			
+			Point p = points.get(i);
+			
+			// Allow source point
+			if (p.getType()=="Source") {
+				used[i] = true;
+				sourcesAdded.add(p.getID());
+				current.add(p);
+				backtrack(current, used, sourcesAdded, result);
+				current.remove(current.size() - 1);
+				sourcesAdded.remove(p.getID());
+				used[i] = false;
+			}
+			// Allow destination only if source has been added
+			else if (p.getType()=="Destination" && sourcesAdded.contains(p.getID())) {
+				used[i] = true;
+				current.add(p);
+				backtrack(current, used, sourcesAdded, result);
+				current.remove(current.size() - 1);
+				used[i] = false;
+			}
+		}
+	}
 
 	
 	private void updateCenter() {
