@@ -113,4 +113,9 @@ class Edge {
 		}
 		return final_itr;
 	}
+
+	public Properties getProperty(int integer) {
+		
+		return this.edge_property.get(integer);
+	}
 }

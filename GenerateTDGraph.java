@@ -13,21 +13,20 @@ class GenerateTDGraph {
 	private static List<Edge> edges = new ArrayList<Edge>();
 	private static List<TimeWindow> rush_hours = new ArrayList<TimeWindow>();
 	private static List<Integer> time_series = new ArrayList<Integer>();
-	private static int density;	
+	private static int density= 20;	
 	private static final int MAX_SPEED = 55;//mile per hour
 	private static final int MIN_SPEED = 40;
 	private static final int n = 21048;
 	
-	public static void driver(String directory) {
-		TimeWindow rush1 = new TimeWindow(7*60+30, 9*60+30);
+	public static void driver(String directory) throws NumberFormatException, IOException {
+		/*TimeWindow rush1 = new TimeWindow(7*60+30, 9*60+30);
 		rush_hours.add(rush1);
 		TimeWindow rush2 = new TimeWindow(16*60, 18*60+30);
 		rush_hours.add(rush2);
 		fill_time_series();
-		density = 20;//Integer.parseInt(args[0]);
-		extractEdgeFile();
+		extractEdgeFile(directory);
 		generateTDCostNScore();
-		printEdgeFile();
+		printEdgeFile();*/
 		
 		Graph.set_vertex_count(n);
 		extract_nodes(directory);
@@ -49,7 +48,7 @@ class GenerateTDGraph {
 		edgeWriter.write("\n");
 		
 		for(Edge edg : edges) {
-	    	edgeWriter.write(edg.get_source() + " " + edg.get_destination() + " ");
+	    	edgeWriter.write(edg.get_source() + " " + edg.get_destination() + " " + edg.getDistance() + " ");
 
 			for(int j=0;j<time_series.size()-1;j++) {
 				edgeWriter.write(edg.getProperty(time_series.get(j)).get_travel_cost() + ",");
@@ -78,7 +77,7 @@ class GenerateTDGraph {
 		for(int ind =0;ind<edges.size();ind++) {
 			Edge edg = edges.get(ind);
 			int speed = rand.nextInt(MIN_SPEED, MAX_SPEED);
-			double cost = edg.get_distance()*60/speed;//travel time in minute
+			double cost = edg.getDistance()*60/speed;//travel time in minute
 			int rush =0;
 			boolean insideRush = false;
 					
@@ -118,8 +117,9 @@ class GenerateTDGraph {
 		
 	}
 
-	private static void extractEdgeFile() throws NumberFormatException, IOException {
-		File fin = new File(EdgeFile);
+	private static void extractEdgeFile(String current_directory) throws NumberFormatException, IOException {
+		String EdgeFile = current_directory + "/" + "CaliforniaEdges.txt";;
+		File fin = new File(EdgeFile );
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		String line;
 		
@@ -166,7 +166,7 @@ class GenerateTDGraph {
 	}
 
 	private static void extract_edges(String current_directoty) throws NumberFormatException, IOException{
-		String edge_file = current_directoty + "/" + "edges_" + Graph.get_vertex_count() +".txt";
+		String edge_file = current_directoty + "/" + "edges_" + Graph.get_vertex_count() + "_" + density + ".txt";
 		File fin = new File(edge_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		String line;
@@ -184,9 +184,9 @@ class GenerateTDGraph {
 
 			int source = Integer.parseInt(entries[0]);
 			int destination = Integer.parseInt(entries[1]);
-			String travel_cost = entries[2];
-			String score = entries[3];
-			double distance = Double.parseDouble(entries[4]);
+			double distance = Double.parseDouble(entries[2]);
+			String travel_cost = entries[3];
+			String score = entries[4];
 			Edge edge = new Edge(source, destination, distance);
 
 			String[] travel_costs = null;
