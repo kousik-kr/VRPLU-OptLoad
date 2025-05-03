@@ -27,7 +27,7 @@ public class VRPLoadingUnloadingMain {
 	//private static Map<String, String> dest_src = new HashMap<String, String>();
 	//private static List<String[]> validOrderings = new ArrayList<String[]>();
 	public static ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()-1);
-	private static String currentDirectory;
+	private static final String currentDirectory = System.getProperty("user.dir");
 	private static Queue<Query> queries = new LinkedList<Query>();
 	public static final int START_WORKING_HOUR = 540;
 	public static final int END_WORKING_HOUR = 1140;
@@ -56,20 +56,16 @@ public class VRPLoadingUnloadingMain {
 //		sdOrdering.run();
 //		System.out.println(validOrderings.size());
 //		printOrderings();
+		GenerateTDGraph.driver(currentDirectory);
 		
-		extract_nodes();
-		extract_edges();
 		create_query_bucket();
 		try {
 			query_processing();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -134,61 +130,6 @@ public class VRPLoadingUnloadingMain {
             e.printStackTrace();
         }
 		
-		br.close();
-	}
-
-	private static void extract_nodes() throws NumberFormatException, IOException{
-		String node_file = currentDirectory + "/" + "nodes_" + Graph.get_vertex_count() +".txt";
-		File fin = new File(node_file);
-		BufferedReader br = new BufferedReader(new FileReader(fin));
-		String line = null;
-		while((line = br.readLine()) != null){
-			String[] entries = line.split(" ");
-			
-			Node node = new Node(Integer.parseInt(entries[0]), Double.parseDouble(entries[1]), Double.parseDouble(entries[2]));
-			Graph.add_node(Integer.parseInt(entries[0]), node);
-		}
-		br.close();
-	}
-
-	private static void extract_edges() throws NumberFormatException, IOException{
-		String edge_file = currentDirectory + "/" + "edges_" + Graph.get_vertex_count() +".txt";
-		File fin = new File(edge_file);
-		BufferedReader br = new BufferedReader(new FileReader(fin));
-		String line;
-		String[] time_series = null;
-
-		if((line = br.readLine()) != null){
-			time_series = line.split(" ");
-		}
-		
-		Graph.updateTimeSeries(time_series);
-
-		while((line = br.readLine()) != null){
-			String[] entries = null;
-			entries = line.split(" ");
-
-			int source = Integer.parseInt(entries[0]);
-			int destination = Integer.parseInt(entries[1]);
-			String travel_cost = entries[2];
-			String score = entries[3];
-			double distance = Double.parseDouble(entries[4]);
-			Edge edge = new Edge(source, destination, distance);
-
-			String[] travel_costs = null;
-			String[] scores = null;
-
-			travel_costs = travel_cost.split(",");
-			scores = score.split(",");
-
-			for(int i=0;i<travel_costs.length;i++){
-				Properties properties = new Properties(Double.parseDouble(travel_costs[i]), Integer.parseInt(scores[i]));
-				edge.add_property(Integer.parseInt(time_series[i]), properties);
-			}
-
-			Graph.get_node(source).insert_outgoing_edge(edge);
-			Graph.get_node(destination).insert_incoming_edge(edge);
-		}
 		br.close();
 	}
 
