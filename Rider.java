@@ -80,8 +80,10 @@ class Rider {
 			
 			cluster.setAvailableCapacity(this.max_capacity-current_consumption);
 			
-			allPermutedLists.add(cluster.computeValidOrderings());
+			cluster.computeValidOrderings();
 			cluster.computeConsumption(current_consumptions);
+			cluster.validateAndPruneOrderings();
+			allPermutedLists.add(cluster.getOrderings());
 		}
 	
         generateCrossProduct(allPermutedLists, 0, new ArrayList<>());
