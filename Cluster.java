@@ -97,12 +97,11 @@ class Cluster {
 			
 	}
 	
-	public List<List<Point>> computeValidOrderings() {
+	public void computeValidOrderings() {
 		this.valid_orderings = new ArrayList<List<Point>>();
 		boolean[] used = new boolean[this.points.size()];
         backtrack(new ArrayList<>(), used, new HashSet<>(), this.valid_orderings);
         filterOutBasedOnCapacity();
-		return this.valid_orderings;
 	}
 
 	private void filterOutBasedOnCapacity() {
@@ -229,5 +228,18 @@ class Cluster {
 			intervals.add(point.getTimeWindow());
 		}
 		this.min_overlap = findminOverlapping(intervals);
+	}
+
+	public void validateAndPruneOrderings() {
+		// TODO Auto-generated method stub
+		
+		for(List<Point> ordering : this.valid_orderings) {
+			
+		}
+		
+	}
+
+	public List<List<Point>> getOrderings() {
+		return this.valid_orderings;
 	}
 }
