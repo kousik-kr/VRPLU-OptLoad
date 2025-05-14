@@ -234,9 +234,27 @@ class Cluster {
 		// TODO Auto-generated method stub
 		
 		for(List<Point> ordering : this.valid_orderings) {
+			List<Integer> prunedPoints = new ArrayList<Integer>();
 			
+			do{
+				int point = prunePoint(ordering);
+				prunedPoints.add(point);
+			}while(isValid(ordering));
+			
+			updateinOtherCluster();
 		}
 		
+	}
+
+	private boolean isValid(List<Point> ordering) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private int prunePoint(List<Point> ordering) {
+		// TODO Auto-generated method stub
+		
+		return 0;
 	}
 
 	public List<List<Point>> getOrderings() {
