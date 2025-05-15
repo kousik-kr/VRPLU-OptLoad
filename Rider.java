@@ -71,7 +71,7 @@ class Rider {
 		
 		Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
 		
-		List<List<List<Point>>> allPermutedLists = new ArrayList<>();
+		//List<List<List<Point>>> allPermutedLists = new ArrayList<>();
 		for(Cluster cluster:disjoint_clusters) {
 			int current_consumption = 0;
 			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
@@ -83,10 +83,10 @@ class Rider {
 			cluster.computeValidOrderings();
 			cluster.computeConsumption(current_consumptions);
 			cluster.validateAndPruneOrderings();
-			allPermutedLists.add(cluster.getOrderings());
+			//allPermutedLists.add(cluster.getOrderings());
 		}
 	
-        generateCrossProduct(allPermutedLists, 0, new ArrayList<>());
+        generateCrossProduct(0, new ArrayList<>(),new ArrayList<>());
 
         
         for (List<Point> combination : this.valid_orderings) {
@@ -95,18 +95,34 @@ class Rider {
         }
     }
 
-    private void generateCrossProduct(List<List<List<Point>>> allPermutedLists, int depth,
-                                             List<Point> current) {
-        if (depth == allPermutedLists.size()) {
-        	this.valid_orderings.add(new ArrayList<>(current));
+    private void generateCrossProduct(int depth, List<Point> current_points, List<Integer> current_invalids) {
+        if (depth == this.disjoint_clusters.size()) {
+        	List<Point> ordering = new ArrayList<Point>();
+        	for(Point point: current_points) {
+        		if(!current_invalids.contains(point.getID())) {
+        			ordering.add(point);
+        		}
+        	}
+        	
+        	this.valid_orderings.add(ordering);
             return;
         }
 
-        for (List<Point> permutation : allPermutedLists.get(depth)) {
-            current.addAll(permutation);
-            generateCrossProduct(allPermutedLists, depth + 1, current);
+        for (Entry<List<Point>,List<Integer>> entry: this.disjoint_clusters.get(depth).getOrderings().entrySet()) {
+        	List<Point> permutation = entry.getKey();
+        	List<Integer> invalids = entry.getValue();
+        	
+        	current_points.addAll(permutation);
+        	current_invalids.addAll(invalids);
+        	
+            generateCrossProduct(depth + 1, current_points, current_invalids);
+            
             for (int i = 0; i < permutation.size(); i++) {
-                current.remove(current.size() - 1); // backtrack
+            	current_points.remove(current_points.size() - 1); // backtrack
+            }
+            
+            for (int i = 0; i < invalids.size(); i++) {
+            	current_invalids.remove(current_invalids.size() - 1); // backtrack
             }
         }
 
