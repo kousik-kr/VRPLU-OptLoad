@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 class Cluster {
@@ -13,7 +14,7 @@ class Cluster {
 	private double start_time=0;
 	private double end_time=0;
 	private double center;
-	private List<List<Point>> valid_orderings;
+	private Map<List<Point>, List<Integer>> valid_orderings;
 	private int available_capacity;
 	private int min_overlap;
 	
@@ -98,21 +99,22 @@ class Cluster {
 	}
 	
 	public void computeValidOrderings() {
-		this.valid_orderings = new ArrayList<List<Point>>();
+		this.valid_orderings = new HashMap<List<Point>,List<Integer>>();
 		boolean[] used = new boolean[this.points.size()];
         backtrack(new ArrayList<>(), used, new HashSet<>(), this.valid_orderings);
         filterOutBasedOnCapacity();
 	}
 
 	private void filterOutBasedOnCapacity() {
-		List<List<Point>> updated_orderings = new ArrayList<List<Point>>();
-		for(List<Point> ordering: this.valid_orderings) {
+		Map<List<Point>,List<Integer>> updated_orderings = new HashMap<List<Point>,List<Integer>>();
+		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
+			List<Point> ordering = entry.getKey();
 			if(checkValidity(ordering)) {
-				updated_orderings.add(ordering);
+				updated_orderings.put(ordering,null);
 			}
 		}
 		this.valid_orderings.clear();
-		this.valid_orderings.addAll(updated_orderings);
+		this.valid_orderings.putAll(updated_orderings);
 	}
 
 	private boolean checkValidity(List<Point> ordering) {
@@ -135,9 +137,9 @@ class Cluster {
 		return true;
 	}
 
-	private void backtrack(List<Point> current, boolean[] used, Set<Integer> sourcesAdded, List<List<Point>> result) {
+	private void backtrack(List<Point> current, boolean[] used, Set<Integer> sourcesAdded, Map<List<Point>, List<Integer>> valid_orderings2) {
 		if (current.size() == points.size()) {
-			result.add(new ArrayList<>(current));
+			valid_orderings2.put(new ArrayList<>(current),null);
 			return;
 		}
 		
@@ -151,7 +153,7 @@ class Cluster {
 				used[i] = true;
 				sourcesAdded.add(p.getID());
 				current.add(p);
-				backtrack(current, used, sourcesAdded, result);
+				backtrack(current, used, sourcesAdded, valid_orderings2);
 				current.remove(current.size() - 1);
 				sourcesAdded.remove(p.getID());
 				used[i] = false;
@@ -160,7 +162,7 @@ class Cluster {
 			else if (p.getType()=="Destination" && sourcesAdded.contains(p.getID())) {
 				used[i] = true;
 				current.add(p);
-				backtrack(current, used, sourcesAdded, result);
+				backtrack(current, used, sourcesAdded, valid_orderings2);
 				current.remove(current.size() - 1);
 				used[i] = false;
 			}
@@ -233,15 +235,15 @@ class Cluster {
 	public void validateAndPruneOrderings() {
 		// TODO Auto-generated method stub
 		
-		for(List<Point> ordering : this.valid_orderings) {
+		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
+			List<Point> ordering = entry.getKey();
 			List<Integer> prunedPoints = new ArrayList<Integer>();
 			
 			do{
 				int point = prunePoint(ordering);
 				prunedPoints.add(point);
 			}while(isValid(ordering));
-			
-			updateinOtherCluster();
+			entry.setValue(prunedPoints);
 		}
 		
 	}
@@ -257,7 +259,7 @@ class Cluster {
 		return 0;
 	}
 
-	public List<List<Point>> getOrderings() {
+	public Map<List<Point>,List<Integer>> getOrderings() {
 		return this.valid_orderings;
 	}
 }
