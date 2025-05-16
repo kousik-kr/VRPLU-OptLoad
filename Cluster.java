@@ -233,7 +233,6 @@ class Cluster {
 	}
 
 	public void validateAndPruneOrderings() {
-		// TODO Auto-generated method stub
 		
 		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
 			List<Point> ordering = entry.getKey();
@@ -249,15 +248,54 @@ class Cluster {
 	}
 
 	private boolean isValid(List<Point> ordering) {
-		// TODO Auto-generated method stub
+		Ordering tmp_ordering = new Ordering(ordering, start_time, end_time);
+		if(tmp_ordering.getTravelTime()+start_time<=end_time)
+			return true;
 		return false;
 	}
 
-	private int prunePoint(List<Point> ordering) {
-		// TODO Auto-generated method stub
-		
-		return 0;
-	}
+    public int prunePoint(List<Point> originalPath) {
+        List<Point> path = new ArrayList<>(originalPath);
+        int worstIndex = -1;
+        int worstID = -1;
+        double maxCost = -1;
+
+        // Exclude first and last nodes
+        for (int i = 1; i < path.size() - 1; i++) {
+            Point prev = path.get(i - 1);
+            Point curr = path.get(i);
+            Point next = path.get(i + 1);
+
+            List<Point> without_list = new ArrayList<Point>();
+            without_list.add(prev);
+            without_list.add(next);
+            Ordering without = new Ordering(without_list, start_time, end_time);
+            double timeWithout = without.getTravelTime();
+            
+            List<Point> with_list = new ArrayList<Point>();
+            without_list.add(prev);
+            without_list.add(next);
+            Ordering with = new Ordering(with_list, start_time, end_time);
+            double timeWith = with.getTravelTime();
+            double extraTime = timeWith - timeWithout;
+
+            double cost = curr.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) extraTime / curr.getServiceObject().getServiceQuantity();
+
+            if (cost > maxCost) {
+                maxCost = cost;
+                worstIndex = i;
+                worstID = curr.getID();
+            }
+
+            if (worstIndex != -1) {
+                path.remove(worstIndex);
+            } else {
+                break;
+            }
+        }
+
+        return worstID;
+    }
 
 	public Map<List<Point>,List<Integer>> getOrderings() {
 		return this.valid_orderings;

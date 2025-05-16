@@ -85,78 +85,7 @@ class Ordering {
 		}
 	}
 	
-	private void computePath() {
-		this.path.add(this.valid_order.get(0).getNode().getNodeID());
-		for(int i=1;i<this.valid_order.size();i++) {
-			
-			int src = this.valid_order.get(i-1).getNode().getNodeID();
-			int dest = this.valid_order.get(i).getNode().getNodeID();
-			
-			this.path.addAll(ShortestPath(src, dest));
-		}
-	}
 	
-	private List<Integer> ShortestPath(int src, int dest) {
-		List<Integer> tmp_path = new ArrayList<Integer>();
-		Map<Integer, Double> fScore = new HashMap<>();
-		
-		PriorityQueue<Integer> queue = new PriorityQueue<Integer>(1, 
-	        new Comparator<Integer>(){
-			@Override
-	    	public int compare(Integer i, Integer j){
-	            if(fScore.get(i) > fScore.get(j)){
-	                return 1;
-	            }
-	            else if (fScore.get(i) < fScore.get(j)){
-	                return -1;
-	            }
-	            else{
-	                return 0;
-	            }
-	        }
-	    });     
-        Map<Integer, Double> gCost = new HashMap<>();	//shortest path at any visited node
-         
-        gCost.put(src, 0.0);
-        Map<Integer, Integer> parents = new HashMap<Integer, Integer>();
-		parents .put(src, -1);	//parent of source is -1
-         
-         //priroty of any node is current arrival time at that node + the minimum time to reach destination from that node
-        double sourcePriority = Graph.get_node(src).euclidean_distance(Graph.get_node(dest));
-        fScore.put(src,  sourcePriority);
-        queue.add(src);
-         
-        while(!queue.isEmpty()){
-        	int current_node = queue.poll();
-             
-            if(current_node == dest){ //reached goal, hence return
-               
-                while(parents.get(current_node)!=-1) {
-                	 tmp_path.add(current_node);
-                }
-                break;
-            }
-              
-            Node currentNode = Graph.get_node(current_node);
-            for(Entry<Integer, Edge> entry : currentNode.get_outgoing_edges().entrySet()){	//iterate for each adjacency of the current node
-            	  
-                Edge edg = entry.getValue();
-                int child = edg.get_destination();
-                double temp_g_cost = gCost.get(current_node) + edg.getDistance();
-                double temp_f_scores = temp_g_cost + Graph.get_node(child).euclidean_distance(Graph.get_node(dest));    
-                  
-                if (!gCost.containsKey(child) || temp_g_cost < gCost.get(child)) {	//update if the node is newly visited or a better path is available
-                    gCost.put(child, temp_g_cost);
-                    fScore.put(child, temp_f_scores);
-                    queue.add(child);
-                    parents.put(child, current_node);
-                }
-            }
-        }
-	        
-	        
-		return tmp_path;
-	}
 	
 	private void computeTravelTimeFunction() {
 		
@@ -233,6 +162,78 @@ class Ordering {
         arrival_time_breakpoints.addAll(tmp_arrival_time_breakpoints);
 	}
 	
+	private void computePath() {
+		this.path.add(this.valid_order.get(0).getNode().getNodeID());
+		for(int i=1;i<this.valid_order.size();i++) {
+			
+			int src = this.valid_order.get(i-1).getNode().getNodeID();
+			int dest = this.valid_order.get(i).getNode().getNodeID();
+			
+			this.path.addAll(computeShortestPath(src, dest));
+		}
+	}
+	
+	public List<Integer> computeShortestPath(int src, int dest) {
+		List<Integer> tmp_path = new ArrayList<Integer>();
+		Map<Integer, Double> fScore = new HashMap<>();
+		
+		PriorityQueue<Integer> queue = new PriorityQueue<Integer>(1, 
+	        new Comparator<Integer>(){
+			@Override
+	    	public int compare(Integer i, Integer j){
+	            if(fScore.get(i) > fScore.get(j)){
+	                return 1;
+	            }
+	            else if (fScore.get(i) < fScore.get(j)){
+	                return -1;
+	            }
+	            else{
+	                return 0;
+	            }
+	        }
+	    });     
+        Map<Integer, Double> gCost = new HashMap<>();	//shortest path at any visited node
+         
+        gCost.put(src, 0.0);
+        Map<Integer, Integer> parents = new HashMap<Integer, Integer>();
+		parents .put(src, -1);	//parent of source is -1
+         
+         //priroty of any node is current arrival time at that node + the minimum time to reach destination from that node
+        double sourcePriority = Graph.get_node(src).euclidean_distance(Graph.get_node(dest));
+        fScore.put(src,  sourcePriority);
+        queue.add(src);
+         
+        while(!queue.isEmpty()){
+        	int current_node = queue.poll();
+             
+            if(current_node == dest){ //reached goal, hence return
+               
+                while(parents.get(current_node)!=-1) {
+                	 tmp_path.add(current_node);
+                }
+                break;
+            }
+              
+            Node currentNode = Graph.get_node(current_node);
+            for(Entry<Integer, Edge> entry : currentNode.get_outgoing_edges().entrySet()){	//iterate for each adjacency of the current node
+            	  
+                Edge edg = entry.getValue();
+                int child = edg.get_destination();
+                double temp_g_cost = gCost.get(current_node) + edg.getDistance();
+                double temp_f_scores = temp_g_cost + Graph.get_node(child).euclidean_distance(Graph.get_node(dest));    
+                  
+                if (!gCost.containsKey(child) || temp_g_cost < gCost.get(child)) {	//update if the node is newly visited or a better path is available
+                    gCost.put(child, temp_g_cost);
+                    fScore.put(child, temp_f_scores);
+                    queue.add(child);
+                    parents.put(child, current_node);
+                }
+            }
+        }
+	        
+	        
+		return tmp_path;
+	}
 
 	private static List<BreakPoint> createArrivalBreakpoints(List<Double> time_series) {
 		List<BreakPoint> breakpoints = new ArrayList<BreakPoint>();
