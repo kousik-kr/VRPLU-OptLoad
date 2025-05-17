@@ -16,7 +16,7 @@ class GenerateTDGraph {
 	private static int density= 20;	
 	private static final int MAX_SPEED = 55;//mile per hour
 	private static final int MIN_SPEED = 40;
-	private static final int n = 21048;
+	private static final int n = 285050;
 	
 	public static void driver(String directory) throws NumberFormatException, IOException {
 		/*TimeWindow rush1 = new TimeWindow(7*60+30, 9*60+30);
@@ -166,7 +166,7 @@ class GenerateTDGraph {
 	}
 
 	private static void extract_edges(String current_directoty) throws NumberFormatException, IOException{
-		String edge_file = current_directoty + "/" + "edges_" + Graph.get_vertex_count() + "_" + density + ".txt";
+		String edge_file = current_directoty + "/" + "edges_" + Graph.get_vertex_count() + ".txt";
 		File fin = new File(edge_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		String line;
@@ -184,19 +184,16 @@ class GenerateTDGraph {
 
 			int source = Integer.parseInt(entries[0]);
 			int destination = Integer.parseInt(entries[1]);
-			double distance = Double.parseDouble(entries[2]);
+			double distance = Graph.get_node(source).euclidean_distance(Graph.get_node(destination));
 			String travel_cost = entries[3];
-			String score = entries[4];
 			Edge edge = new Edge(source, destination, distance);
 
 			String[] travel_costs = null;
-			String[] scores = null;
 
 			travel_costs = travel_cost.split(",");
-			scores = score.split(",");
 
 			for(int i=0;i<travel_costs.length;i++){
-				Properties properties = new Properties(Double.parseDouble(travel_costs[i]), Integer.parseInt(scores[i]));
+				Properties properties = new Properties(Double.parseDouble(travel_costs[i])*300/1300, 0);
 				edge.add_property(Integer.parseInt(time_series[i]), properties);
 			}
 

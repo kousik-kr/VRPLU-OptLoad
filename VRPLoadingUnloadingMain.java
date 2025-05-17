@@ -72,7 +72,7 @@ public class VRPLoadingUnloadingMain {
 	}
 
 	private static void create_query_bucket() throws IOException{
-		String query_file = currentDirectory + "/" + "Src-dest_" + Graph.get_vertex_count() +".txt";
+		String query_file = currentDirectory + "/" + "Query_" + Graph.get_vertex_count() +".txt";
 		File fin = new File(query_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		
@@ -94,6 +94,7 @@ public class VRPLoadingUnloadingMain {
                     
                     Point depot = new Point(depot_node, depot_timewindow, "Depot");
                     current_query.setDepot(depot);
+                    current_query.setTimeWindow(depot_timewindow);
                     
                 } 
                 else if (line.startsWith("C") && current_query != null) {
