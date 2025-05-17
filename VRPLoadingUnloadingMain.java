@@ -142,7 +142,7 @@ public class VRPLoadingUnloadingMain {
 		while(!queries.isEmpty()){
 			long start = System.currentTimeMillis();
 			Rider rider =  new Rider(queries.peek(),MAX_CLUSTER_SIZE);
-			Ordering output_order = rider.getFinalOrder();
+			List<Ordering> output_order = rider.getFinalOrders();
 			
 			long end = System.currentTimeMillis();
 			queries.poll();
@@ -153,23 +153,25 @@ public class VRPLoadingUnloadingMain {
 		System.out.println("All query processing is done.");
 	}
 
-	private static void printOutput(Ordering output_order, BufferedWriter writer, long start, long end) {
+	private static void printOutput(List<Ordering> output_orders, BufferedWriter writer, long start, long end) {
 		try {
-			writer.write("[");
-			List<Point> order = output_order.getOrder();
-			
-			for(int i=0;i<order.size()-1;i++) {
-				Point point = order.get(i);
-				if(point.getType()=="Source") {
-					writer.write("S"+point.getID()+":"+point.getNode().getNodeID()+",");
-				}else if(point.getType()=="Desitination") {
-					writer.write("D"+point.getID()+":"+point.getNode().getNodeID()+",");
-				}else {
-					writer.write("Depot"+":"+point.getNode().getNodeID()+",");
+			for(Ordering output_order:output_orders) {
+				writer.write("[");
+				List<Point> order = output_order.getOrder();
+				
+				for(int i=0;i<order.size()-1;i++) {
+					Point point = order.get(i);
+					if(point.getType()=="Source") {
+						writer.write("S"+point.getID()+":"+point.getNode().getNodeID()+",");
+					}else if(point.getType()=="Desitination") {
+						writer.write("D"+point.getID()+":"+point.getNode().getNodeID()+",");
+					}else {
+						writer.write("Depot"+":"+point.getNode().getNodeID()+",");
+					}
 				}
+				writer.write("Depot"+":"+order.get(order.size()-1).getNode().getNodeID()+"]\tL-U Cost:" + output_order.getLUCost() + "\tDistance:" + 
+				output_order.getDistance() + "\tTravel Time:" + output_order.getTravelTime() + "\n");
 			}
-			writer.write("Depot"+":"+order.get(order.size()-1).getNode().getNodeID()+"]\tL-U Cost:" + output_order.getLUCost() + "\tDistance:" + 
-			output_order.getDistance() + "\tTravel Time:" + output_order.getTravelTime() + "\n");
 			
 		} catch (IOException e) {
 			

@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
 class Rider {
-	private Ordering final_order = null;
+	private List<Ordering> pareto_optimal_orders = null;
 	private List<List<Point>> valid_orderings;
 	private double QUERY_START_TIME;
 	private double QUERY_END_TIME;
@@ -247,25 +247,32 @@ class Rider {
 		for(List<Point> ordering : this.valid_orderings) {
 			Ordering temp_ordering = new Ordering(ordering, this.QUERY_START_TIME, this.QUERY_END_TIME);
 			
-			if(this.final_order==null) {
-				this.final_order = temp_ordering;
-			}else if(final_order.numberOFSuccessfulService()<temp_ordering.numberOFSuccessfulService()) {
-				final_order = temp_ordering;
-			}else if(final_order.numberOFSuccessfulService()==temp_ordering.numberOFSuccessfulService()) {
-				if(final_order.getLUCost()<temp_ordering.getLUCost()) {
-					final_order = temp_ordering;
-				}
-				else if (final_order.getLUCost()==temp_ordering.getLUCost()) {
-					if(final_order.getTravelTime()<temp_ordering.getTravelTime()) {
-						final_order = temp_ordering;
-					}
-				}
-				
+			if(this.pareto_optimal_orders==null) {
+				this.pareto_optimal_orders = new ArrayList<Ordering>();
+				this.pareto_optimal_orders.add(temp_ordering);
+			}else {
+				checkDominance(temp_ordering);
 			}
 		}
 	}
 	
-	public Ordering getFinalOrder() {
-		return this.final_order;
+	private void checkDominance(Ordering temp_ordering) {
+		List<Ordering> dominated = new ArrayList<Ordering>();
+		for(Ordering ordering:this.pareto_optimal_orders) {
+			if(ordering.getLUCost()<=temp_ordering.getLUCost() && ordering.getDistance()<=temp_ordering.getDistance()) {
+				dominated.add(ordering);
+			}
+			else if(ordering.getLUCost()>=temp_ordering.getLUCost() && ordering.getDistance()>=temp_ordering.getDistance()) {
+				break;
+			}
+		}
+		for(Ordering ordering:dominated) {
+			this.pareto_optimal_orders.remove(ordering);
+		}
+		
+	}
+
+	public List<Ordering> getFinalOrders() {
+		return this.pareto_optimal_orders;
 	}
 }
