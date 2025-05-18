@@ -1,9 +1,11 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -19,17 +21,58 @@ class Cluster {
 	private int min_overlap;
 	
     public int findminOverlapping(List<TimeWindow> intervals) {
+    	PriorityQueue<Event> events_queue = new PriorityQueue<Event>(1, 
+    	        new Comparator<Event>(){
+    			@Override
+    	    	public int compare(Event i, Event j){
+    	            if(i.getTime() > j.getTime()){
+    	                return 1;
+    	            }
+    	            else if (i.getTime() < j.getTime()){
+    	                return -1;
+    	            }
+    	            else{
+    	                return 0;
+    	            }
+    	        }
+    	    }); 
+    	
+    	PriorityQueue<Double> starttime_queue = new PriorityQueue<Double>(1, 
+    	        new Comparator<Double>(){
+    			@Override
+    	    	public int compare(Double i, Double j){
+    	            if(i > j){
+    	                return 1;
+    	            }
+    	            else if (i < j){
+    	                return -1;
+    	            }
+    	            else{
+    	                return 0;
+    	            }
+    	        }
+    	    }); 
+    	
+      
+        for (TimeWindow interval : intervals) {
+        	events_queue.add(new Event(interval.getStartTime(), true));  // start
+        	events_queue.add(new Event(interval.getEndTime(), false)); // end
+            starttime_queue.add(interval.getStartTime());
+        }
+        
         List<Event> events = new ArrayList<>();
         List<Double> startTimes = new ArrayList<>();
 
-        for (TimeWindow interval : intervals) {
-            events.add(new Event(interval.getStartTime(), true));  // start
-            events.add(new Event(interval.getEndTime(), false)); // end
-            startTimes.add(interval.getStartTime());
+        while(!events_queue.isEmpty()) {
+        	events.add(events_queue.poll());
+        }
+        
+        while(!starttime_queue.isEmpty()) {
+        	startTimes.add(starttime_queue.poll());
         }
 
-        Collections.sort(events);
-        Collections.sort(startTimes);
+        //Collections.sort(events);
+        //Collections.sort(startTimes);
 
         int active = 0;
         int ended = 0;
@@ -37,16 +80,16 @@ class Cluster {
 
         Map<Double, Integer> startsAfterMap = new HashMap<>();
         for (Event e : events) {
-            int count = countStartsAfter(startTimes, e.time);
-            startsAfterMap.put(e.time, count);
+            int count = countStartsAfter(startTimes, e.getTime());
+            startsAfterMap.put(e.getTime(), count);
         }
 
         for (Event event : events) {
-            if (!event.isStart) {
+            if (!event.isStart()) {
                 active--;
                 ended++;
             } else {
-                int startsAfter = startsAfterMap.getOrDefault(event.time, 0);
+                int startsAfter = startsAfterMap.getOrDefault(event.getTime(), 0);
                 if (ended > 0 && startsAfter > 0 && active < minOverlap) {
                     minOverlap = active;
                 }
