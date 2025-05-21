@@ -13,6 +13,8 @@ class Cluster {
 
 
 	List<Point> points;
+	List<Integer> single;
+	List<Integer> both;
 	private double start_time=0;
 	private double end_time=0;
 	private double center;
@@ -116,10 +118,17 @@ class Cluster {
 	
 	public Cluster() {
 		points = new ArrayList<Point>();
+		single = new ArrayList<Integer>();
+		both = new ArrayList<Integer>();
 	}
 	
 	public void addPoint(Point point) {
 		this.points.add(point);
+		if(this.single.contains(point.getID())) {
+			both.add(point.getID());
+		}else {
+			single.add(point.getID());
+		}
 		updateStartTime(point);
 		updateEndTime(point);
 		updateCenter();
@@ -202,12 +211,21 @@ class Cluster {
 				used[i] = false;
 			}
 			// Allow destination only if source has been added
-			else if (p.getType()=="Destination" && sourcesAdded.contains(p.getID())) {
-				used[i] = true;
-				current.add(p);
-				backtrack(current, used, sourcesAdded, valid_orderings2);
-				current.remove(current.size() - 1);
-				used[i] = false;
+			else if (p.getType()=="Destination") {
+				if(both.contains(p.getID()) && sourcesAdded.contains(p.getID())) {
+					used[i] = true;
+					current.add(p);
+					backtrack(current, used, sourcesAdded, valid_orderings2);
+					current.remove(current.size() - 1);
+					used[i] = false;
+				}
+				else if (!both.contains(p.getID())) {
+					used[i] = true;
+					current.add(p);
+					backtrack(current, used, sourcesAdded, valid_orderings2);
+					current.remove(current.size() - 1);
+					used[i] = false;
+				}
 			}
 		}
 	}
@@ -220,7 +238,7 @@ class Cluster {
 
 	private void updateEndTime(Point point) {
 		if(this.end_time==0 || this.end_time < point.getTimeWindow().getEndTime()) {
-			this.end_time = point.getTimeWindow().getStartTime();
+			this.end_time = point.getTimeWindow().getEndTime();
 		}
 		
 	}
@@ -281,18 +299,18 @@ class Cluster {
 			List<Point> ordering = entry.getKey();
 			List<Integer> prunedPoints = new ArrayList<Integer>();
 			
-			do{
+			while(!isValid(ordering)){
 				int point = prunePoint(ordering);
 				prunedPoints.add(point);
-			}while(isValid(ordering));
+			}
 			entry.setValue(prunedPoints);
 		}
 		
 	}
 
 	private boolean isValid(List<Point> ordering) {
-		Ordering tmp_ordering = new Ordering(ordering, start_time, end_time);
-		if(tmp_ordering.getTravelTime()+start_time<=end_time)
+		Ordering tmp_ordering = new Ordering(ordering);
+		if(tmp_ordering.getTravelTime(start_time, end_time)+start_time<=end_time)
 			return true;
 		return false;
 	}
@@ -303,6 +321,14 @@ class Cluster {
         int worstID = -1;
         double maxCost = -1;
 
+        //for first node
+        Point first =   path.get(0);
+        Ordering with_first = new Ordering(path.subList(0, 2));
+        double time_first = with_first.getTravelTime(start_time, end_time);
+        maxCost = first.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_first / first.getServiceObject().getServiceQuantity();
+        worstIndex = 0;
+        worstID = first.getID();
+        
         // Exclude first and last nodes
         for (int i = 1; i < path.size() - 1; i++) {
             Point prev = path.get(i - 1);
@@ -312,14 +338,15 @@ class Cluster {
             List<Point> without_list = new ArrayList<Point>();
             without_list.add(prev);
             without_list.add(next);
-            Ordering without = new Ordering(without_list, start_time, end_time);
-            double timeWithout = without.getTravelTime();
+            Ordering without = new Ordering(without_list);
+            double timeWithout = without.getTravelTime(start_time, end_time);
             
             List<Point> with_list = new ArrayList<Point>();
-            without_list.add(prev);
-            without_list.add(next);
-            Ordering with = new Ordering(with_list, start_time, end_time);
-            double timeWith = with.getTravelTime();
+            with_list.add(prev);
+            with_list.add(curr);
+            with_list.add(next);
+            Ordering with = new Ordering(with_list);
+            double timeWith = with.getTravelTime(start_time, end_time);
             double extraTime = timeWith - timeWithout;
 
             double cost = curr.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) extraTime / curr.getServiceObject().getServiceQuantity();
@@ -330,13 +357,27 @@ class Cluster {
                 worstID = curr.getID();
             }
 
-            if (worstIndex != -1) {
-                path.remove(worstIndex);
-            } else {
-                break;
-            }
         }
 
+        //for last node
+        Point last =   path.get(path.size()-1);
+        Ordering with_last = new Ordering(path.subList(path.size()-2, path.size()));
+        double time_last = with_last.getTravelTime(start_time, end_time);
+        double cost = last.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_last / last.getServiceObject().getServiceQuantity();
+
+        if (cost > maxCost) {
+            maxCost = cost;
+            worstIndex = path.size()-1;
+            worstID = last.getID();
+        }
+        
+        if (worstIndex != -1) {
+            path.remove(worstIndex);
+        } 
+        
+        originalPath.clear();
+        originalPath.addAll(path);
+        
         return worstID;
     }
 

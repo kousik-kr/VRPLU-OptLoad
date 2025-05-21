@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -14,15 +15,13 @@ class Ordering {
 	private List<Point> valid_order;
 	private Function time_function;
 	
-	public Ordering(List<Point> order, double start_time, double end_time) {
+	public Ordering(List<Point> order) {
 		this.valid_order = new ArrayList<Point>();
 		this.path = new ArrayList<Integer>();
 		this.valid_order.addAll(order);
 		computePath();
 		computeLUCost();
-		computeInitialFunction(start_time, end_time);
-		computeTravelTimeFunction();
-		computeTravelTime();
+		
 	}
 	
 	public List<Point> getOrder(){
@@ -42,6 +41,12 @@ class Ordering {
 
 	private void computeInitialFunction(double start_time, double end_time) {
 		List<Double> time_series = Graph.getTimeSeries(start_time, end_time);
+		if(time_series.size()==0 ||time_series.get(0)!=start_time) {
+			time_series.add(0, start_time);
+		}
+		if(time_series.get(time_series.size()-1)!=end_time) 
+			time_series.add(end_time);
+		
 		List<BreakPoint> break_points = createArrivalBreakpoints(time_series);
 		this.time_function = new Function(break_points);
 		
@@ -55,7 +60,10 @@ class Ordering {
 		return this.distance;
 	}
 	
-	public double getTravelTime() {
+	public double getTravelTime(double start_time, double end_time) {
+		computeInitialFunction(start_time, end_time);
+		computeTravelTimeFunction();
+		computeTravelTime();
 		return this.travel_time;
 	}
 	
@@ -116,8 +124,8 @@ class Ordering {
 	}
 	
 	private void computeAndUpdateBreakpoints(List<BreakPoint> arrival_time_breakpoints, int current_point) {
-		int current_vertex = this.path.get(current_point);
-		int next_vertex = this.path.get(current_point+1);
+		int current_vertex = this.path.get(current_point-1);
+		int next_vertex = this.path.get(current_point);
 		
 		List<Double> time_series = Graph.getTimeSeries(arrival_time_breakpoints.get(0).getY(), 
 				arrival_time_breakpoints.get(arrival_time_breakpoints.size()-1).getY());
@@ -133,13 +141,14 @@ class Ordering {
                 i++;
             } else {
             	int tmp_next_vertex = next_vertex;
+            	int tmp_current_vertex = current_vertex;
             	
-            	double dep_time = Graph.get_node(tmp_next_vertex).get_incoming_edges().get(current_vertex).get_departure_time(time_series.get(j));
+            	double dep_time = Graph.get_node(tmp_next_vertex).get_incoming_edges().get(tmp_current_vertex).get_departure_time(time_series.get(j));
             	           	
-            	for(int itr=current_point;itr>0;itr--){
-            		tmp_next_vertex = current_vertex;
-            		current_vertex = this.path.get(itr-1);
-            		dep_time = Graph.get_node(tmp_next_vertex).get_incoming_edges().get(current_vertex).get_departure_time(dep_time);
+            	for(int itr=current_point-1;itr>0;itr--){
+            		tmp_next_vertex = tmp_current_vertex;
+            		tmp_current_vertex = this.path.get(itr-1);
+            		dep_time = Graph.get_node(tmp_next_vertex).get_incoming_edges().get(tmp_current_vertex).get_departure_time(dep_time);
             		
             	}
             	
@@ -170,6 +179,7 @@ class Ordering {
 			int dest = this.valid_order.get(i).getNode().getNodeID();
 			
 			this.path.addAll(computeShortestPath(src, dest));
+			/////System.out.println("Hi");
 		}
 	}
 	
@@ -207,9 +217,10 @@ class Ordering {
         	int current_node = queue.poll();
              
             if(current_node == dest){ //reached goal, hence return
-               
+            	this.distance+= gCost.get(dest);
                 while(parents.get(current_node)!=-1) {
                 	 tmp_path.add(current_node);
+                	 current_node = parents.get(current_node);
                 }
                 break;
             }
@@ -230,7 +241,7 @@ class Ordering {
                 }
             }
         }
-	        
+	    Collections.reverse(tmp_path);
 	        
 		return tmp_path;
 	}

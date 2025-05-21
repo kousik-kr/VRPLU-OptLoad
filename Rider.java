@@ -19,12 +19,14 @@ class Rider {
 	
 	public Rider (Query query, int m) {
 		this.QUERY_END_TIME = query.getQueryEndTime();
-		this.QUERY_START_TIME = query.getQueryEndTime();
+		this.QUERY_START_TIME = query.getQueryStartTime();
 		this.max_size = m;
 		this.depot = query.getDepot();
 		this.max_capacity = query.getCapacity();
 		this.service_requests = new HashMap<Integer, Service>();
 		this.service_requests.putAll(query.getServices());
+		this.disjoint_clusters = new ArrayList<Cluster>();
+		this.valid_orderings = new ArrayList<List<Point>>();
 		driver();
 	}
 
@@ -70,7 +72,7 @@ class Rider {
 	private void findValidOrdernings() {
 		
 		Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
-		
+		int i=0;
 		//List<List<List<Point>>> allPermutedLists = new ArrayList<>();
 		for(Cluster cluster:disjoint_clusters) {
 			int current_consumption = 0;
@@ -84,18 +86,48 @@ class Rider {
 			cluster.computeConsumption(current_consumptions);
 			cluster.validateAndPruneOrderings();
 			//allPermutedLists.add(cluster.getOrderings());
+			System.out.println("Pruning done for cluster "+ i++ + " Out of "+ disjoint_clusters.size());
 		}
-	
+		System.out.println("All pruning done");
+		List<Cluster> temp_disjoint_cluster = new ArrayList<Cluster>();
+		for(Cluster cluster:disjoint_clusters) {
+			if(cluster.getOrderings().size()>0) {
+				temp_disjoint_cluster.add(cluster);
+			}
+		}
+		disjoint_clusters.clear();
+		disjoint_clusters.addAll(temp_disjoint_cluster);
+			
         generateCrossProduct(0, new ArrayList<>(),new ArrayList<>());
-
-        
+        System.out.println("All cross product generated");
+        List<List<Point>> temp_valid_ordering = new ArrayList<List<Point>>();
         for (List<Point> combination : this.valid_orderings) {
-            combination.add(0, this.depot);
-            combination.add(this.depot);
+        	if(checkSDConstraint(combination)) {
+        		temp_valid_ordering.add(combination);
+	            combination.add(0, this.depot);
+	            combination.add(this.depot);
+        	}
         }
+        this.valid_orderings.clear();
+        this.valid_orderings.addAll(temp_valid_ordering);
     }
 
-    private void generateCrossProduct(int depth, List<Point> current_points, List<Integer> current_invalids) {
+    private boolean checkSDConstraint(List<Point> combination) {
+		Map<Integer, Point> sources = new HashMap<Integer, Point>();
+		for(Point point: combination) {
+			if(point.getType()=="Source") {
+				sources.put(point.getID(), point);
+			}
+			else if(point.getType()=="Destination") {
+				if(!sources.containsKey(point.getID())) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private void generateCrossProduct(int depth, List<Point> current_points, List<Integer> current_invalids) {
         if (depth == this.disjoint_clusters.size()) {
         	List<Point> ordering = new ArrayList<Point>();
         	for(Point point: current_points) {
@@ -191,28 +223,66 @@ class Rider {
 				overlapping_points.add(point);
 		}
 			
-		for(Point point: overlapping_points) {
-			decideSide(point, left_cluster,right_cluster);
-		}
-		
-		if(left_cluster.getSize()>this.max_size) {
-			clusters.addAll(SplitCluster(left_cluster));
-		}
-		else {
+		if(left_cluster.getSize()==0 && right_cluster.getSize()==0) {
+			for(Point point: overlapping_points) {
+				left_cluster.addPoint(point);
+			}
 			clusters.add(left_cluster);
 		}
-		
-		
-		if(right_cluster.getSize()>this.max_size) {
-			clusters.addAll(SplitCluster(right_cluster));
+		else if(left_cluster.getSize()==0 && right_cluster.getSize()!=0) {
+			for(Point point: overlapping_points) {
+				left_cluster.addPoint(point);
+			}
+			clusters.add(left_cluster);
+			
+			if(right_cluster.getSize()>this.max_size) {
+				clusters.addAll(SplitCluster(right_cluster));
+			}
+			else {
+				clusters.add(right_cluster);
+			}
 		}
-		else {
+		else if(right_cluster.getSize()==0 && left_cluster.getSize()!=0) {
+			for(Point point: overlapping_points) {
+				right_cluster.addPoint(point);
+			}
+			
+			if(left_cluster.getSize()>this.max_size) {
+				clusters.addAll(SplitCluster(left_cluster));
+			}
+			else {
+				clusters.add(left_cluster);
+			}
+			
 			clusters.add(right_cluster);
 		}
+		else if(left_cluster.getSize()!=0 && right_cluster.getSize()!=0) {
+			for(Point point: overlapping_points) {
+				decideSide(point, left_cluster,right_cluster);
+			}
+			if(left_cluster.getSize()>this.max_size) {
+				clusters.addAll(SplitCluster(left_cluster));
+			}
+			else {
+				clusters.add(left_cluster);
+			}
+			
+			
+			if(right_cluster.getSize()>this.max_size) {
+				clusters.addAll(SplitCluster(right_cluster));
+			}
+			else {
+				clusters.add(right_cluster);
+			}
+		}
+		
+		
 		return clusters;
 	}
 
 	private void decideSide(Point point, Cluster left_cluster, Cluster right_cluster) {
+		
+		
 		double c_left = left_cluster.getCenter();
 		double c_right = right_cluster.getCenter();
 		double c_point = point.getTimeWindow().getCenter();
@@ -244,15 +314,13 @@ class Rider {
 	}
 
 	private void computeFinalOrder() {
+		int i=0;
+
+		this.pareto_optimal_orders = new ArrayList<Ordering>();
 		for(List<Point> ordering : this.valid_orderings) {
-			Ordering temp_ordering = new Ordering(ordering, this.QUERY_START_TIME, this.QUERY_END_TIME);
-			
-			if(this.pareto_optimal_orders==null) {
-				this.pareto_optimal_orders = new ArrayList<Ordering>();
-				this.pareto_optimal_orders.add(temp_ordering);
-			}else {
-				checkDominance(temp_ordering);
-			}
+			Ordering temp_ordering = new Ordering(ordering);
+			checkDominance(temp_ordering);
+			System.out.println(i++);
 		}
 	}
 	
@@ -263,13 +331,13 @@ class Rider {
 				dominated.add(ordering);
 			}
 			else if(ordering.getLUCost()>=temp_ordering.getLUCost() && ordering.getDistance()>=temp_ordering.getDistance()) {
-				break;
+				return;
 			}
 		}
 		for(Ordering ordering:dominated) {
 			this.pareto_optimal_orders.remove(ordering);
 		}
-		
+		this.pareto_optimal_orders.add(temp_ordering);
 	}
 
 	public List<Ordering> getFinalOrders() {

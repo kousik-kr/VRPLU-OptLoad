@@ -72,7 +72,7 @@ public class VRPLoadingUnloadingMain {
 	}
 
 	private static void create_query_bucket() throws IOException{
-		String query_file = currentDirectory + "/" + "Query_" + Graph.get_vertex_count() +".txt";
+		String query_file = currentDirectory + "/" + "Queries_" + Graph.get_vertex_count() +".txt";
 		File fin = new File(query_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		
@@ -148,6 +148,8 @@ public class VRPLoadingUnloadingMain {
 			long end = System.currentTimeMillis();
 			queries.poll();
 			printOutput(output_order,writer, start, end);
+			writer.flush();
+			//System.out.println(index++);
 		}
 		writer.close();
 		fout.close();
@@ -164,15 +166,16 @@ public class VRPLoadingUnloadingMain {
 					Point point = order.get(i);
 					if(point.getType()=="Source") {
 						writer.write("S"+point.getID()+":"+point.getNode().getNodeID()+",");
-					}else if(point.getType()=="Desitination") {
+					}else if(point.getType()=="Destination") {
 						writer.write("D"+point.getID()+":"+point.getNode().getNodeID()+",");
 					}else {
 						writer.write("Depot"+":"+point.getNode().getNodeID()+",");
 					}
 				}
 				writer.write("Depot"+":"+order.get(order.size()-1).getNode().getNodeID()+"]\tL-U Cost:" + output_order.getLUCost() + "\tDistance:" + 
-				output_order.getDistance() + "\tTravel Time:" + output_order.getTravelTime() + "\n");
+				output_order.getDistance() + "\n");
 			}
+			writer.write((end-start)/1000F+"\n\n");
 			
 		} catch (IOException e) {
 			
