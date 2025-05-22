@@ -158,15 +158,53 @@ class Cluster {
 	}
 
 	private void filterOutBasedOnCapacity() {
-		Map<List<Point>,List<Integer>> updated_orderings = new HashMap<List<Point>,List<Integer>>();
+		//Map<List<Point>,List<Integer>> updated_orderings = new HashMap<List<Point>,List<Integer>>();
 		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
 			List<Point> ordering = entry.getKey();
-			if(checkValidity(ordering)) {
-				updated_orderings.put(ordering,null);
+			List<Integer> prunedPoints = new ArrayList<Integer>();
+			
+			while(!checkValidity(ordering)) {
+				int prunedPoint = pruneOnCapacity(ordering);
+				prunedPoints.add(prunedPoint);
+			}
+			if(entry.getValue()==null)
+				entry.setValue(prunedPoints);
+			else {
+				List<Integer> existingPrunedPoints = entry.getValue();
+				existingPrunedPoints.addAll(prunedPoints);
+				entry.setValue(existingPrunedPoints);
 			}
 		}
-		this.valid_orderings.clear();
-		this.valid_orderings.putAll(updated_orderings);
+//		this.valid_orderings.clear();
+//		this.valid_orderings.putAll(updated_orderings);
+	}
+
+	private int pruneOnCapacity(List<Point> originalPath) {
+		List<Point> path = new ArrayList<>(originalPath);
+        int worstIndex = -1;
+        int worstID = -1;
+        int minCapacity = Integer.MAX_VALUE;
+
+        for (int i = 0; i < path.size(); i++) {
+            Point curr = path.get(i);
+            int currCapacity = curr.getServiceObject().getServiceQuantity();
+            if (curr.getType()=="Source" && currCapacity < minCapacity) {
+            		minCapacity = currCapacity;
+                worstIndex = i;
+                worstID = curr.getID();
+            }
+
+        }
+        
+        if (worstIndex != -1) {
+            path.remove(worstIndex);
+        } 
+        
+        originalPath.clear();
+        originalPath.addAll(path);
+        
+        return worstID;
+		
 	}
 
 	private boolean checkValidity(List<Point> ordering) {
@@ -303,7 +341,13 @@ class Cluster {
 				int point = prunePoint(ordering);
 				prunedPoints.add(point);
 			}
-			entry.setValue(prunedPoints);
+			if(entry.getValue()==null)
+				entry.setValue(prunedPoints);
+			else {
+				List<Integer> existingPrunedPoints = entry.getValue();
+				existingPrunedPoints.addAll(prunedPoints);
+				entry.setValue(existingPrunedPoints);
+			}
 		}
 		
 	}

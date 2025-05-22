@@ -72,7 +72,7 @@ public class VRPLoadingUnloadingMain {
 	}
 
 	private static void create_query_bucket() throws IOException{
-		String query_file = currentDirectory + "/" + "Queries_" + Graph.get_vertex_count() +".txt";
+		String query_file = currentDirectory + "/" + "Query_" + Graph.get_vertex_count() +".txt";
 		File fin = new File(query_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		
