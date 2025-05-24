@@ -1,12 +1,10 @@
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Map.Entry;
 import java.util.Set;
 
 class Cluster {
@@ -18,7 +16,7 @@ class Cluster {
 	private double start_time=0;
 	private double end_time=0;
 	private double center;
-	private Map<List<Point>, List<Integer>> valid_orderings;
+	private List<List<Point>> valid_orderings;
 	private int available_capacity;
 	private int min_overlap;
 	
@@ -151,30 +149,67 @@ class Cluster {
 	}
 	
 	public void computeValidOrderings() {
-		this.valid_orderings = new HashMap<List<Point>,List<Integer>>();
+		this.valid_orderings = new ArrayList<List<Point>>();
 		boolean[] used = new boolean[this.points.size()];
         backtrack(new ArrayList<>(), used, new HashSet<>(), this.valid_orderings);
-        filterOutBasedOnCapacity();
+        
 	}
 
-	private void filterOutBasedOnCapacity() {
+//	private void filterOutBasedOnCapacity() {
+//		//Map<List<Point>,List<Integer>> updated_orderings = new HashMap<List<Point>,List<Integer>>();
+//		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
+//			List<Point> ordering = entry.getKey();
+//			List<Integer> prunedPoints = new ArrayList<Integer>();
+//			
+//			while(ordering.size()>0 && !checkValidity(ordering)) {
+//				int prunedPoint = pruneOnCapacity(ordering);
+//				prunedPoints.add(prunedPoint);
+//			}
+//			if(entry.getValue()==null)
+//				entry.setValue(prunedPoints);
+//			else {
+//				List<Integer> existingPrunedPoints = entry.getValue();
+//				existingPrunedPoints.addAll(prunedPoints);
+//				entry.setValue(existingPrunedPoints);
+//			}
+//		}
+////		this.valid_orderings.clear();
+////		this.valid_orderings.putAll(updated_orderings);
+//	}
+	
+	public int filterOutBasedOnCapacity(Map<Integer,Boolean> prunedPoints) {
 		//Map<List<Point>,List<Integer>> updated_orderings = new HashMap<List<Point>,List<Integer>>();
-		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
-			List<Point> ordering = entry.getKey();
-			List<Integer> prunedPoints = new ArrayList<Integer>();
-			
-			while(ordering.size()>0 && !checkValidity(ordering)) {
-				int prunedPoint = pruneOnCapacity(ordering);
-				prunedPoints.add(prunedPoint);
-			}
-			if(entry.getValue()==null)
-				entry.setValue(prunedPoints);
-			else {
-				List<Integer> existingPrunedPoints = entry.getValue();
-				existingPrunedPoints.addAll(prunedPoints);
-				entry.setValue(existingPrunedPoints);
+		List<Point> currentPrunedPoints = new ArrayList<Point>();
+		for(Point point : points) {
+			if(prunedPoints.containsKey(point.getID())) {
+				currentPrunedPoints.add(point);
+				prunedPoints.remove(point.getID());
 			}
 		}
+		for(Point point : currentPrunedPoints) {
+			this.points.remove(point);
+		}
+		Map<Integer,Boolean> prunedSources = new HashMap<Integer,Boolean>();
+		while(this.points.size()>0 && !checkValidity(this.points)) {
+			int prunedPoint = pruneOnCapacity(this.points);
+			if(prunedPoint==-1) {
+				System.out.println("Invalid exception");
+				System.exit(0);
+			}
+			prunedSources.put(prunedPoint,true);
+		}
+		
+		prunedPoints.putAll(prunedSources);
+		int current_consumption = 0;
+		for(Point point: points) {
+			if(point.getType()=="Source") {
+				current_consumption += point.getServiceObject().getServiceQuantity();
+			}
+			else if(point.getType()=="Destination") {
+				current_consumption -= point.getServiceObject().getServiceQuantity();
+			}
+		}
+		return current_consumption;
 //		this.valid_orderings.clear();
 //		this.valid_orderings.putAll(updated_orderings);
 	}
@@ -209,15 +244,11 @@ class Cluster {
 
 	private boolean checkValidity(List<Point> ordering) {
 		int current_consumption = 0;
-		Map<Integer,Point> current_pickups = new HashMap<Integer, Point>();
 		for(Point point: ordering) {
 			if(point.getType()=="Source") {
-				current_pickups.put(point.getID(), point);
 				current_consumption += point.getServiceObject().getServiceQuantity();
 			}
 			else if(point.getType()=="Destination") {
-				if(current_pickups.containsKey(point.getID()))
-					current_pickups.remove(point.getID());
 				current_consumption -= point.getServiceObject().getServiceQuantity();
 			}
 			
@@ -227,9 +258,9 @@ class Cluster {
 		return true;
 	}
 
-	private void backtrack(List<Point> current, boolean[] used, Set<Integer> sourcesAdded, Map<List<Point>, List<Integer>> valid_orderings2) {
+	private void backtrack(List<Point> current, boolean[] used, Set<Integer> sourcesAdded, List<List<Point>> valid_orderings2) {
 		if (current.size() == points.size()) {
-			valid_orderings2.put(new ArrayList<>(current),null);
+			valid_orderings2.add(new ArrayList<>(current));
 			return;
 		}
 		
@@ -332,100 +363,22 @@ class Cluster {
 	}
 
 	public void validateAndPruneOrderings() {
-		
-		for(Entry<List<Point>,List<Integer>> entry: this.valid_orderings.entrySet()) {
-			List<Point> ordering = entry.getKey();
-			List<Integer> prunedPoints = new ArrayList<Integer>();
+		List<List<Point>> prunedOrderings = new ArrayList<List<Point>>();
+		for(List<Point> ordering: this.valid_orderings) {
 			
-			while(ordering.size()>0 && !isValid(ordering)){
-				int point = prunePoint(ordering);
-				prunedPoints.add(point);
-			}
-			if(entry.getValue()==null)
-				entry.setValue(prunedPoints);
-			else {
-				List<Integer> existingPrunedPoints = entry.getValue();
-				existingPrunedPoints.addAll(prunedPoints);
-				entry.setValue(existingPrunedPoints);
+			if(!checkValidity(ordering)) {
+				prunedOrderings.add(ordering);
+				continue;
 			}
 		}
 		
+		for(List<Point> ordering: prunedOrderings) {
+			this.valid_orderings.remove(ordering);
+		}
+		
 	}
-
-	private boolean isValid(List<Point> ordering) {
-		Ordering tmp_ordering = new Ordering(ordering);
-		if(tmp_ordering.getTravelTime(start_time, end_time)+start_time<=end_time)
-			return true;
-		return false;
-	}
-
-    public int prunePoint(List<Point> originalPath) {
-        List<Point> path = new ArrayList<>(originalPath);
-        int worstIndex = -1;
-        int worstID = -1;
-        double maxCost = -1;
-
-        //for first node
-        Point first =   path.get(0);
-        Ordering with_first = new Ordering(path.subList(0, 2));
-        double time_first = with_first.getTravelTime(start_time, end_time);
-        maxCost = first.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_first / first.getServiceObject().getServiceQuantity();
-        worstIndex = 0;
-        worstID = first.getID();
-        
-        // Exclude first and last nodes
-        for (int i = 1; i < path.size() - 1; i++) {
-            Point prev = path.get(i - 1);
-            Point curr = path.get(i);
-            Point next = path.get(i + 1);
-
-            List<Point> without_list = new ArrayList<Point>();
-            without_list.add(prev);
-            without_list.add(next);
-            Ordering without = new Ordering(without_list);
-            double timeWithout = without.getTravelTime(start_time, end_time);
-            
-            List<Point> with_list = new ArrayList<Point>();
-            with_list.add(prev);
-            with_list.add(curr);
-            with_list.add(next);
-            Ordering with = new Ordering(with_list);
-            double timeWith = with.getTravelTime(start_time, end_time);
-            double extraTime = timeWith - timeWithout;
-
-            double cost = curr.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) extraTime / curr.getServiceObject().getServiceQuantity();
-
-            if (cost > maxCost) {
-                maxCost = cost;
-                worstIndex = i;
-                worstID = curr.getID();
-            }
-
-        }
-
-        //for last node
-        Point last =   path.get(path.size()-1);
-        Ordering with_last = new Ordering(path.subList(path.size()-2, path.size()));
-        double time_last = with_last.getTravelTime(start_time, end_time);
-        double cost = last.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_last / last.getServiceObject().getServiceQuantity();
-
-        if (cost > maxCost) {
-            maxCost = cost;
-            worstIndex = path.size()-1;
-            worstID = last.getID();
-        }
-        
-        if (worstIndex != -1) {
-            path.remove(worstIndex);
-        } 
-        
-        originalPath.clear();
-        originalPath.addAll(path);
-        
-        return worstID;
-    }
-
-	public Map<List<Point>,List<Integer>> getOrderings() {
+	
+	public List<List<Point>> getOrderings() {
 		return this.valid_orderings;
 	}
 }

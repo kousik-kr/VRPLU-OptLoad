@@ -15,11 +15,15 @@ class Ordering {
 	private List<Integer> path;
 	private List<Point> valid_order;
 	private Function time_function;
+	private double start_time;
+	private double end_time;
 	
-	public Ordering(List<Point> order) {
+	public Ordering(List<Point> order, double start, double end) {
 		this.valid_order = new ArrayList<Point>();
 		this.path = new ArrayList<Integer>();
 		this.valid_order.addAll(order);
+		this.start_time = start;
+		this.end_time = end;
 		computePath();
 		computeLUCost();
 		
@@ -261,6 +265,118 @@ class Ordering {
 			breakpoints.add(break_point);
 		}
 		return breakpoints; 
+	}
+
+	public boolean validateAndPrunePoints() {
+		boolean doPruning = false;
+		while(this.valid_order.size()>0){
+			int index = 1;
+			double current_time = start_time;
+			for(;index<this.valid_order.size();index++) {
+				int start_node = this.path.get(index-1);
+				Node startNode = Graph.get_node(start_node);
+				int end_node = this.path.get(index);
+				Edge edg = startNode.get_outgoing_edges().get(end_node);
+				
+				current_time = edg.get_arrival_time(current_time);
+				Point currentPoint = this.valid_order.get(index);
+				if(current_time<=currentPoint.getTimeWindow().getEndTime()) {
+					if(current_time<currentPoint.getTimeWindow().getStartTime()) {
+						current_time = currentPoint.getTimeWindow().getStartTime();
+					}
+				}
+				else {
+					doPruning = true;
+					break;
+				}
+				doPruning = false;
+			}
+			if(doPruning)
+				prunePoint(this.valid_order.subList(0, index));
+			else
+				break;
+			
+		}
+		if(this.valid_order.size()==0)
+			return false;
+		return true;
+	}
+
+    public void prunePoint(List<Point> subOrder) {
+        List<Point> path = new ArrayList<>(subOrder);
+        int worstIndex = -1;
+        int worstID = -1;
+        double maxCost = -1;
+
+        //for first node
+        Point first =   path.get(0);
+        Ordering with_first = new Ordering(path.subList(0, 2), start_time, end_time);
+        double time_first = with_first.getTravelTime(start_time, end_time);
+        maxCost = first.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_first / first.getServiceObject().getServiceQuantity();
+        worstIndex = 0;
+        worstID = first.getID();
+        
+        // Exclude first and last nodes
+        for (int i = 1; i < path.size() - 1; i++) {
+            Point prev = path.get(i - 1);
+            Point curr = path.get(i);
+            Point next = path.get(i + 1);
+
+            List<Point> without_list = new ArrayList<Point>();
+            without_list.add(prev);
+            without_list.add(next);
+            Ordering without = new Ordering(without_list, start_time, end_time);
+            double timeWithout = without.getTravelTime(start_time, end_time);
+            
+            List<Point> with_list = new ArrayList<Point>();
+            with_list.add(prev);
+            with_list.add(curr);
+            with_list.add(next);
+            Ordering with = new Ordering(with_list, start_time, end_time);
+            double timeWith = with.getTravelTime(start_time, end_time);
+            double extraTime = timeWith - timeWithout;
+
+            double cost = curr.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) extraTime / curr.getServiceObject().getServiceQuantity();
+
+            if (cost > maxCost) {
+                maxCost = cost;
+                worstIndex = i;
+                worstID = curr.getID();
+            }
+
+        }
+
+        //for last node
+        Point last =   path.get(path.size()-1);
+        Ordering with_last = new Ordering(path.subList(path.size()-2, path.size()), start_time, end_time);
+        double time_last = with_last.getTravelTime(start_time, end_time);
+        double cost = last.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_last / last.getServiceObject().getServiceQuantity();
+
+        if (cost > maxCost) {
+            maxCost = cost;
+            worstIndex = path.size()-1;
+            worstID = last.getID();
+        }
+        
+        if (worstIndex != -1) {
+            this.valid_order.remove(worstIndex);
+        } 
+        else {
+        		System.out.println("Error Occured");
+        		System.exit(1);
+        }
+        
+        removePair(worstID);
+    }
+
+	private void removePair(int worstID) {
+		int i=0;
+		for(;i<this.valid_order.size();i++) {
+			if(this.valid_order.get(i).getID()==worstID)
+				break;
+		}
+		this.valid_order.remove(i);
+		
 	}
 
 }

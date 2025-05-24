@@ -73,19 +73,21 @@ class Rider {
 
 	private void findValidOrdernings() {
 		
-		Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
+		//Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
+		Map<Integer,Boolean> prunedOnCapacity = new HashMap<Integer,Boolean>();
 		int i=0;
+		int current_consumption = 0;
 		//List<List<List<Point>>> allPermutedLists = new ArrayList<>();
 		for(Cluster cluster:disjoint_clusters) {
-			int current_consumption = 0;
-			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
-				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
-			}
+//			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
+//				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
+//			}
 			
 			cluster.setAvailableCapacity(this.max_capacity-current_consumption);
+			current_consumption += cluster.filterOutBasedOnCapacity(prunedOnCapacity);
 			
 			cluster.computeValidOrderings();
-			cluster.computeConsumption(current_consumptions);
+//			cluster.computeConsumption(current_consumptions);
 			cluster.validateAndPruneOrderings();
 			//allPermutedLists.add(cluster.getOrderings());
 			System.out.println("Pruning done for cluster "+ i++ + " Out of "+ disjoint_clusters.size());
@@ -100,7 +102,7 @@ class Rider {
 		disjoint_clusters.clear();
 		disjoint_clusters.addAll(temp_disjoint_cluster);
 			
-        generateCrossProduct(0, new ArrayList<>(),new ArrayList<>());
+        generateCrossProduct(0, new ArrayList<>());
         System.out.println("All cross product generated");
         List<List<Point>> temp_valid_ordering = new ArrayList<List<Point>>();
         for (List<Point> combination : this.valid_orderings) {
@@ -129,35 +131,23 @@ class Rider {
 		return true;
 	}
 
-	private void generateCrossProduct(int depth, List<Point> current_points, List<Integer> current_invalids) {
+	private void generateCrossProduct(int depth, List<Point> current_points) {
         if (depth == this.disjoint_clusters.size()) {
-        	List<Point> ordering = new ArrayList<Point>();
-        	for(Point point: current_points) {
-        		if(!current_invalids.contains(point.getID())) {
-        			ordering.add(point);
-        		}
-        	}
-        	
-        	this.valid_orderings.add(ordering);
+	        	List<Point> ordering = new ArrayList<Point>();
+	        	ordering.addAll(current_points);
+	        	this.valid_orderings.add(ordering);
             return;
         }
 
-        for (Entry<List<Point>,List<Integer>> entry: this.disjoint_clusters.get(depth).getOrderings().entrySet()) {
-        	List<Point> permutation = entry.getKey();
-        	List<Integer> invalids = entry.getValue();
-        	
-        	current_points.addAll(permutation);
-        	current_invalids.addAll(invalids);
-        	
-            generateCrossProduct(depth + 1, current_points, current_invalids);
+        for (List<Point> permutation: this.disjoint_clusters.get(depth).getOrderings()) {
+	        
+	        	current_points.addAll(permutation);
+            generateCrossProduct(depth + 1, current_points);
             
             for (int i = 0; i < permutation.size(); i++) {
-            	current_points.remove(current_points.size() - 1); // backtrack
+            		current_points.remove(current_points.size() - 1); // backtrack
             }
             
-            for (int i = 0; i < invalids.size(); i++) {
-            	current_invalids.remove(current_invalids.size() - 1); // backtrack
-            }
         }
 
 		
@@ -320,8 +310,9 @@ class Rider {
 
 		this.pareto_optimal_orders = new ArrayList<Ordering>();
 		for(List<Point> ordering : this.valid_orderings) {
-			Ordering temp_ordering = new Ordering(ordering);
-			checkDominance(temp_ordering);
+			Ordering temp_ordering = new Ordering(ordering,this.QUERY_START_TIME,this.QUERY_END_TIME);
+			if(temp_ordering.validateAndPrunePoints())
+				checkDominance(temp_ordering);
 			System.out.println(i++ + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
 		}
 	}
