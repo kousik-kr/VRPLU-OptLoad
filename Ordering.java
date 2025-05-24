@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 class Ordering {
 	private int lu_cost;
+	private int processed_requests;
 	private double distance;
 	private double travel_time=0;
 	private List<Integer> path;
@@ -26,6 +27,10 @@ class Ordering {
 	
 	public List<Point> getOrder(){
 		return this.valid_order;
+	}
+	
+	public int getNumberofProcessedRequests() {
+		return this.processed_requests;
 	}
 	
 	private void computeTravelTime() {
@@ -82,6 +87,8 @@ class Ordering {
 				lu_cost += loading_cost;
 				current_status.put(point.getID(), loading_cost);
 				current_load += loading_cost;
+				
+				this.processed_requests+=point.getServiceObject().getServiceQuantity();//computing service processed
 			}
 			else if(point.getType()=="Destination") {
 				int unloading_cost = point.getServiceObject().getServiceQuantity();

@@ -79,7 +79,7 @@ public class VRPLoadingUnloadingMain {
 		try {
             String line;
             Query current_query = null;
-
+            int i=1;
             while ((line = br.readLine()) != null) {
                 line = line.trim();
                 if (line.isEmpty()) continue;
@@ -88,7 +88,7 @@ public class VRPLoadingUnloadingMain {
                     if (current_query != null) {
                         queries.add(current_query); // save previous block
                     }
-                    current_query = new Query();
+                    current_query = new Query(i++);
                     TimeWindow depot_timewindow = new TimeWindow(START_WORKING_HOUR, END_WORKING_HOUR);
                     Node depot_node = Graph.get_node(Integer.parseInt(line.split(" ")[1]));
                     
@@ -144,10 +144,13 @@ public class VRPLoadingUnloadingMain {
 			long start = System.currentTimeMillis();
 			Rider rider =  new Rider(queries.peek(),MAX_CLUSTER_SIZE);
 			List<Ordering> output_order = rider.getFinalOrders();
+			//List<Ordering> pruned_orders = rider.getPrunedOrders();
 			
 			long end = System.currentTimeMillis();
 			queries.poll();
 			printOutput(output_order,writer, start, end);
+
+			//printOutput(pruned_orders,writer, start, end);
 			writer.flush();
 			//System.out.println(index++);
 		}
@@ -172,8 +175,8 @@ public class VRPLoadingUnloadingMain {
 						writer.write("Depot"+":"+point.getNode().getNodeID()+",");
 					}
 				}
-				writer.write("Depot"+":"+order.get(order.size()-1).getNode().getNodeID()+"]\tL-U Cost:" + output_order.getLUCost() + "\tDistance:" + 
-				output_order.getDistance() + "\n");
+				writer.write("Depot"+":"+order.get(order.size()-1).getNode().getNodeID()+"]\tNumber of Successful Requests:" + 
+				output_order.getNumberofProcessedRequests() + "\tL-U Cost:" + output_order.getLUCost() + "\tDistance:" + output_order.getDistance() + "\n");
 			}
 			writer.write((end-start)/1000F+"\n\n");
 			

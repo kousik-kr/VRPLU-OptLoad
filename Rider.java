@@ -16,6 +16,7 @@ class Rider {
 	private Map<Integer, Service> service_requests;
 	private List<Cluster> disjoint_clusters;
 	private int max_size;
+	private int query_id;
 	
 	public Rider (Query query, int m) {
 		this.QUERY_END_TIME = query.getQueryEndTime();
@@ -25,6 +26,7 @@ class Rider {
 		this.max_capacity = query.getCapacity();
 		this.service_requests = new HashMap<Integer, Service>();
 		this.service_requests.putAll(query.getServices());
+		this.query_id = query.getID();
 		this.disjoint_clusters = new ArrayList<Cluster>();
 		this.valid_orderings = new ArrayList<List<Point>>();
 		driver();
@@ -320,18 +322,20 @@ class Rider {
 		for(List<Point> ordering : this.valid_orderings) {
 			Ordering temp_ordering = new Ordering(ordering);
 			checkDominance(temp_ordering);
-			System.out.println(i++);
+			System.out.println(i++ + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
 		}
 	}
 	
 	private void checkDominance(Ordering temp_ordering) {
 		List<Ordering> dominated = new ArrayList<Ordering>();
 		for(Ordering ordering:this.pareto_optimal_orders) {
-			if(ordering.getLUCost()<=temp_ordering.getLUCost() && ordering.getDistance()<=temp_ordering.getDistance()) {
-				dominated.add(ordering);
-			}
-			else if(ordering.getLUCost()>=temp_ordering.getLUCost() && ordering.getDistance()>=temp_ordering.getDistance()) {
+			if(ordering.getLUCost()<=temp_ordering.getLUCost() && ordering.getDistance()<=temp_ordering.getDistance() 
+					&& ordering.getNumberofProcessedRequests()>=temp_ordering.getNumberofProcessedRequests()) {
 				return;
+			}
+			else if(ordering.getLUCost()>=temp_ordering.getLUCost() && ordering.getDistance()>=temp_ordering.getDistance()
+					&& ordering.getNumberofProcessedRequests()>=temp_ordering.getNumberofProcessedRequests()) {
+				dominated.add(ordering);
 			}
 		}
 		for(Ordering ordering:dominated) {

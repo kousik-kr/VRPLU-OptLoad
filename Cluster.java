@@ -163,7 +163,7 @@ class Cluster {
 			List<Point> ordering = entry.getKey();
 			List<Integer> prunedPoints = new ArrayList<Integer>();
 			
-			while(!checkValidity(ordering)) {
+			while(ordering.size()>0 && !checkValidity(ordering)) {
 				int prunedPoint = pruneOnCapacity(ordering);
 				prunedPoints.add(prunedPoint);
 			}
@@ -337,7 +337,7 @@ class Cluster {
 			List<Point> ordering = entry.getKey();
 			List<Integer> prunedPoints = new ArrayList<Integer>();
 			
-			while(!isValid(ordering)){
+			while(ordering.size()>0 && !isValid(ordering)){
 				int point = prunePoint(ordering);
 				prunedPoints.add(point);
 			}

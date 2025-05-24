@@ -6,6 +6,7 @@ class Query {
 	private int capacity;
 	private Map<Integer, Service> service_requests;
 	private	TimeWindow working_time;
+	private int ID;
 
 	public Point getDepot(){
 		return this.depot;
@@ -57,7 +58,12 @@ class Query {
 		return id;
 	}
 	
-	public Query(){
+	public int getID() {
+		return this.ID;
+	}
+	
+	public Query(int id){
 		this.service_requests = new HashMap<Integer, Service>();
+		this.ID = id;
 	}
 }
