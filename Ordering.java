@@ -277,8 +277,21 @@ class Ordering {
 //		}
 //		return breakpoints; 
 //	}
-
+	
+	//for time-window checking
 	public boolean validateAndPrunePoints() {
+		while(this.valid_order.size()>2 && this.travel_time+start_time <= end_time){
+			prunePoint(this.valid_order);
+		}
+		if(this.valid_order.size()==0)
+			return false;
+		return true;
+	}
+	
+	//for time-window checking
+	/*
+	 public boolean validateAndPrunePoints() {
+	 
 		boolean doPruning = false;
 		while(this.valid_order.size()>2){
 			int index = 1, i=1;
@@ -319,6 +332,7 @@ class Ordering {
 			return false;
 		return true;
 	}
+	*/
 
     public void prunePoint(List<Point> list) {
         List<Point> temp_order = new ArrayList<>(list);
@@ -326,17 +340,6 @@ class Ordering {
         int worstID = -1;
         double maxCost = -1;
         Path pathToReplace = null;
-       // 	double updatedDistance = this.distance;
-        	
-//        //for first node
-//        Point first =   temp_order.get(0);
-//        if(first.getType()!="Depot") {
-//	        Ordering with_first = new Ordering(temp_order.subList(0, 2), start_time, end_time);
-//	        double time_first = with_first.getTravelTime(start_time, end_time);
-//	        maxCost = first.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_first / first.getServiceObject().getServiceQuantity();
-//	        worstIndex = 0;
-//	        worstID = first.getID();
-//        }
         
         // Exclude first and last nodes
         for (int i = 1; i < temp_order.size() - 1; i++) {
@@ -348,20 +351,10 @@ class Ordering {
             without_list.add(prev);
             without_list.add(next);
             Ordering without = new Ordering(without_list, start_time, end_time);
-            //double timeWithout = without.getTravelTime(start_time, end_time);
             
             double currentDistance = without.getDistance();
-            
-            //List<Integer> with_path = new ArrayList<Integer>();
-           // int fromIndex = this.path.indexOf(prev.getNode().getNodeID());
-            //int toIndex = this.path.subList(fromIndex, this.path.size()).indexOf(next.getNode().getNodeID());
-           // with_path.addAll(this.path.subList(fromIndex, fromIndex+toIndex+1));
             double previousDistance = segmentList.get(i).getDistance() + segmentList.get(i+1).getDistance();
-//            with_list.add(prev);
-//            with_list.add(curr);
-//            with_list.add(next);
-            //Ordering with = new Ordering(with_list, start_time, end_time);
-            //double timeWith = with.getTravelTime(start_time, end_time);
+
             double extraDistance = previousDistance - currentDistance;
 
             double cost = curr.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) extraDistance / curr.getServiceObject().getServiceQuantity();
@@ -371,26 +364,10 @@ class Ordering {
                 worstIndex = i;
                 worstID = curr.getID();
                 pathToReplace = new Path(without.getPath(), without.getDistance(), without.getTravelTime());
-                //pathToReplace.addAll(without.getPath());
-               // updatedDistance = extraDistance;
             }
 
         }
 
-        //for last node
-//        Point last =   temp_order.get(temp_order.size()-1);
-//        if(last.getType()!="Depot") {
-//	        Ordering with_last = new Ordering(temp_order.subList(temp_order.size()-2, temp_order.size()), start_time, end_time);
-//	        double time_last = with_last.getTravelTime(start_time, end_time);
-//	        double cost = last.getServiceObject().getServiceQuantity() == 0 ? Double.MAX_VALUE : (double) time_last / last.getServiceObject().getServiceQuantity();
-//	
-//	        if (cost > maxCost) {
-//	            maxCost = cost;
-//	            worstIndex = temp_order.size()-1;
-//	            worstID = last.getID();
-//	        }
-//        }
-        
         if (worstIndex != -1) {
         		updateDetails(worstIndex,pathToReplace);
         } 
