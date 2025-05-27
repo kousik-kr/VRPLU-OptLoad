@@ -1,10 +1,12 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class Rider {
 	private List<Ordering> pareto_optimal_orders = null;
@@ -306,15 +308,33 @@ class Rider {
 	}
 
 	private void computeFinalOrder() {
-		int i=0;
+		//int i=0;
 
 		this.pareto_optimal_orders = new ArrayList<Ordering>();
-		for(List<Point> ordering : this.valid_orderings) {
-			Ordering temp_ordering = new Ordering(ordering,this.QUERY_START_TIME,this.QUERY_END_TIME);
-			if(temp_ordering.validateAndPrunePoints())
-				checkDominance(temp_ordering);
-			System.out.println(i++ + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
-		}
+		
+		AtomicInteger counter = new AtomicInteger(0);
+
+	    List<Ordering> filtered_orders = Collections.synchronizedList(new ArrayList<>());
+
+	    this.valid_orderings.parallelStream().forEach(ordering -> {
+	        Ordering temp_ordering = new Ordering(ordering, this.QUERY_START_TIME, this.QUERY_END_TIME);
+	        if (temp_ordering.validateAndPrunePoints()) {
+	            filtered_orders.add(temp_ordering);
+	        }
+	        int index = counter.incrementAndGet();
+	        System.out.println(index + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
+	    });
+	    
+	    for(Ordering temp_ordering : filtered_orders) {
+	    		checkDominance(temp_ordering);
+	    }
+		
+//		for(List<Point> ordering : this.valid_orderings) {
+//			Ordering temp_ordering = new Ordering(ordering,this.QUERY_START_TIME,this.QUERY_END_TIME);
+//			if(temp_ordering.validateAndPrunePoints())
+//				checkDominance(temp_ordering);
+//			System.out.println(i++ + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
+//		}
 	}
 	
 	private void checkDominance(Ordering temp_ordering) {
