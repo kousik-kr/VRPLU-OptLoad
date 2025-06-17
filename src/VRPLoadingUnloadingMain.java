@@ -27,7 +27,7 @@ public class VRPLoadingUnloadingMain {
 	//private static Map<String, String> dest_src = new HashMap<String, String>();
 	//private static List<String[]> validOrderings = new ArrayList<String[]>();
 	public static ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()-1);
-	private static final String currentDirectory = System.getProperty("user.dir");
+	private static String currentDirectory;// = System.getProperty("user.dir");
 	private static Queue<Query> queries = new LinkedList<Query>();
 	public static final int START_WORKING_HOUR = 540;
 	public static final int END_WORKING_HOUR = 1140;
@@ -56,6 +56,8 @@ public class VRPLoadingUnloadingMain {
 //		sdOrdering.run();
 //		System.out.println(validOrderings.size());
 //		printOrderings();
+
+    currentDirectory = args[0];
 		GenerateTDGraph.driver(currentDirectory);
 		
 		create_query_bucket();
@@ -135,7 +137,7 @@ public class VRPLoadingUnloadingMain {
 	}
 
 	private static void query_processing() throws IOException, InterruptedException, ExecutionException{
-		String output_file = "Output_" + Graph.get_vertex_count() +".txt";
+		String output_file = currentDirectory + "/" + "Output_" + Graph.get_vertex_count() +".txt";
 		FileWriter fout = new FileWriter(output_file);
 		BufferedWriter writer = new BufferedWriter(fout);
 		

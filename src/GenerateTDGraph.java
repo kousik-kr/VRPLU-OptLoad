@@ -152,7 +152,7 @@ class GenerateTDGraph {
 	}
 	
 	private static void extract_nodes(String current_directoty) throws NumberFormatException, IOException{
-		String node_file = current_directoty + "/" + "nodes_" + Graph.get_vertex_count() +".txt";
+		String node_file = current_directoty + "/dataset/" + "nodes_" + Graph.get_vertex_count() +".txt";
 		File fin = new File(node_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		String line = null;
@@ -166,7 +166,7 @@ class GenerateTDGraph {
 	}
 
 	private static void extract_edges(String current_directoty) throws NumberFormatException, IOException{
-		String edge_file = current_directoty + "/" + "edges_" + Graph.get_vertex_count() + "_" + density + ".txt";
+		String edge_file = current_directoty + "/dataset/" + "edges_" + Graph.get_vertex_count() + ".txt";
 		File fin = new File(edge_file);
 		BufferedReader br = new BufferedReader(new FileReader(fin));
 		String line;
