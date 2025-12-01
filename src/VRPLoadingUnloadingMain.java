@@ -188,6 +188,7 @@ public class VRPLoadingUnloadingMain {
                                 writer.newLine();
                         }
                         writer.write((end - start) / 1000F + "\n\n");
+                        writer.flush();
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
