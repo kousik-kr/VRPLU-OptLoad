@@ -25,12 +25,29 @@ mkdir -p "$DATA_RAW_DIR"
 
 # Function to check if gdown is installed
 check_gdown() {
+    # Check if gdown is available in virtual environment
+    if [ -f ".venv/bin/gdown" ]; then
+        export PATH="$(pwd)/.venv/bin:$PATH"
+        return 0
+    fi
+    
     if ! command -v gdown &> /dev/null; then
         echo -e "${YELLOW}gdown is not installed. Installing...${NC}"
-        pip3 install gdown || pip install gdown || {
+        
+        # Try to use virtual environment
+        if [ -f ".venv/bin/pip" ]; then
+            .venv/bin/pip install gdown && {
+                export PATH="$(pwd)/.venv/bin:$PATH"
+                echo -e "${GREEN}gdown installed successfully in virtual environment${NC}"
+                return 0
+            }
+        fi
+        
+        # Try system pip with --user flag
+        pip3 install --user gdown || pip install --user gdown || {
             echo -e "${RED}Failed to install gdown. Please install it manually:${NC}"
-            echo "  pip install gdown"
-            echo "  or: pip3 install gdown"
+            echo "  pip install --user gdown"
+            echo "  or: pip3 install --user gdown"
             return 1
         }
         echo -e "${GREEN}gdown installed successfully${NC}"
@@ -140,6 +157,13 @@ gdown --folder "https://drive.google.com/drive/folders/1amiGMc5Uz92xeuGebwHm2Sj2
     echo ""
     exit 1
 }
+
+# Move files from OptLoad subfolder if they exist there
+if [ -d "$DATASET_DIR/OptLoad" ]; then
+    echo "Moving files from OptLoad subfolder..."
+    mv "$DATASET_DIR/OptLoad/"* "$DATASET_DIR/" 2>/dev/null || true
+    rmdir "$DATASET_DIR/OptLoad" 2>/dev/null || true
+fi
 
 echo ""
 echo "================================================"
