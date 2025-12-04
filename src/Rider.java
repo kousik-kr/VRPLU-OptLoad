@@ -20,6 +20,11 @@ class Rider {
 	private int max_size;
 	private int query_id;
 	
+	// Seed values based on initial sorted ordering
+	private int seed_lu_cost = 0;
+	private double seed_travel_time = 0.0;
+	private double seed_distance = 0.0;
+	
 	public Rider (Query query, int m) {
 		this.QUERY_END_TIME = query.getQueryEndTime();
 		this.QUERY_START_TIME = query.getQueryStartTime();
@@ -68,6 +73,10 @@ class Rider {
 			Point point = minHeap.poll();
 			sorted_list.add(point);
 		}
+		
+		// Compute seed values based on initial sorted ordering
+		computeSeedValues(sorted_list);
+		
 		sweepLine(sorted_list);
 		findValidOrdernings();
 		
@@ -156,6 +165,60 @@ class Rider {
         }
 
 		
+	}
+
+	/**
+	 * Computes seed LU cost, travel time, and distance based on initial sorted ordering.
+	 * This provides a baseline for comparison with optimized orderings.
+	 * @param sorted_list The list of service points sorted by time windows
+	 */
+	private void computeSeedValues(List<Point> sorted_list) {
+		if (sorted_list == null || sorted_list.isEmpty()) {
+			this.seed_lu_cost = 0;
+			this.seed_travel_time = 0.0;
+			this.seed_distance = 0.0;
+			return;
+		}
+		
+		// Create ordering with depot at start and end
+		List<Point> seed_order = new ArrayList<Point>();
+		seed_order.add(this.depot);
+		seed_order.addAll(sorted_list);
+		seed_order.add(this.depot);
+		
+		// Create an Ordering object to compute path, distance, and travel time
+		Ordering seedOrdering = new Ordering(seed_order, this.QUERY_START_TIME, this.QUERY_END_TIME);
+		
+		// Compute and store seed values
+		this.seed_lu_cost = seedOrdering.getLUCost();
+		this.seed_distance = seedOrdering.getDistance();
+		// Travel time would be computed if the getTravelTime method is implemented
+		// For now, we can estimate it from the path computation
+		this.seed_travel_time = 0.0; // Placeholder - can be enhanced if needed
+		
+		System.out.println("\n========================================");
+		System.out.println("SEED ORDERING INFORMATION (Query " + this.query_id + ")");
+		System.out.println("========================================");
+		System.out.println("Number of service points: " + sorted_list.size());
+		System.out.println("Total ordering size (with depot): " + seed_order.size());
+		System.out.println("\nInitial Sorted Order (by time windows):");
+		for (int i = 0; i < seed_order.size(); i++) {
+			Point p = seed_order.get(i);
+			if (i == 0 || i == seed_order.size() - 1) {
+				System.out.println("  [" + i + "] Depot - Node: " + p.getNode().getNodeID());
+			} else {
+				System.out.println("  [" + i + "] " + p.getType() + " - Node: " + p.getNode().getNodeID() + 
+				                   ", Service ID: " + p.getID() + 
+				                   ", TW: [" + p.getTimeWindow().getStartTime() + ", " + 
+				                   p.getTimeWindow().getEndTime() + "]");
+			}
+		}
+		System.out.println("\nComputed Seed Metrics:");
+		System.out.println("  Seed LU Cost: " + this.seed_lu_cost);
+		System.out.println("  Seed Distance: " + String.format("%.2f", this.seed_distance));
+		System.out.println("  Seed Travel Time: " + String.format("%.2f", this.seed_travel_time));
+		System.out.println("  Number of Processed Requests: " + seedOrdering.getNumberofProcessedRequests());
+		System.out.println("========================================\n");
 	}
 
 	//to compute disjoint clusters
@@ -363,6 +426,30 @@ class Rider {
 
 	public List<Ordering> getFinalOrders() {
 		return this.pareto_optimal_orders;
+	}
+	
+	/**
+	 * Returns the seed LU cost computed from the initial sorted ordering
+	 * @return seed LU cost
+	 */
+	public int getSeedLUCost() {
+		return this.seed_lu_cost;
+	}
+	
+	/**
+	 * Returns the seed distance computed from the initial sorted ordering
+	 * @return seed distance
+	 */
+	public double getSeedDistance() {
+		return this.seed_distance;
+	}
+	
+	/**
+	 * Returns the seed travel time computed from the initial sorted ordering
+	 * @return seed travel time
+	 */
+	public double getSeedTravelTime() {
+		return this.seed_travel_time;
 	}
 	
         private List<Cluster> splitClusterBySpatialCoordinates(Cluster currentCluster) {
