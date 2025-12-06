@@ -338,6 +338,17 @@ class Ordering implements RoutePlan {
 	}
 	*/
 
+	public int computeLowerBoundLUCost() {
+		int current_load = 0;
+		for(Point point: this.valid_order) {
+			if(point.getType()=="Source") {
+				int loading_cost = point.getServiceObject().getServiceQuantity();
+				current_load += loading_cost;
+			}
+		}
+		return 2*current_load;
+	}
+
     public void prunePoint(List<Point> list) {
         List<Point> temp_order = new ArrayList<>(list);
         int worstIndex = -1;

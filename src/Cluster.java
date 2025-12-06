@@ -216,8 +216,8 @@ class Cluster {
                 int bottleneckCapacity = computeBottleneckCapacity();
                 this.bestLuCost = Integer.MAX_VALUE;
 
-        // Generate all permutations that respect source-before-destination ordering
-        backtrack(new ArrayList<>(), used, new HashSet<>(), this.valid_orderings, 0, bottleneckCapacity, new StackState());
+                // Generate all permutations that respect source-before-destination ordering
+                backtrack(new ArrayList<>(), used, new HashSet<>(), this.valid_orderings, 0, bottleneckCapacity, new StackState());
 
         }
 

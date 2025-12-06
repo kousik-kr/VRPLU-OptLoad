@@ -22,8 +22,8 @@ class Rider {
 	
 	// Seed values based on initial sorted ordering
 	private int seed_lu_cost = 0;
-	private double seed_travel_time = 0.0;
 	private double seed_distance = 0.0;
+	private int lower_bound_lu_cost = 0;
 	
 	public Rider (Query query, int m) {
 		this.QUERY_END_TIME = query.getQueryEndTime();
@@ -76,6 +76,7 @@ class Rider {
 		
 		// Compute seed values based on initial sorted ordering
 		computeSeedValues(sorted_list);
+		// Identify disjoint temporal clusters using sweep line algorithm
 		
 		sweepLine(sorted_list);
 		findValidOrdernings();
@@ -83,16 +84,16 @@ class Rider {
 		computeFinalOrder();
 	}
 
-        private void findValidOrdernings() {
+	private void findValidOrdernings() {
 
-                //Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
-                Map<Integer,Boolean> prunedOnCapacity = new HashMap<Integer,Boolean>();
-                int i=0;
-                int current_consumption = 0;
-                // Walk each temporal cluster independently and compute feasible permutations
-                // while progressively tracking vehicle capacity already consumed.
-                //List<List<List<Point>>> allPermutedLists = new ArrayList<>();
-                for(Cluster cluster:disjoint_clusters) {
+		//Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
+		Map<Integer,Boolean> prunedOnCapacity = new HashMap<Integer,Boolean>();
+		int i=0;
+		int current_consumption = 0;
+		// Walk each temporal cluster independently and compute feasible permutations
+		// while progressively tracking vehicle capacity already consumed.
+		//List<List<List<Point>>> allPermutedLists = new ArrayList<>();
+		for(Cluster cluster:disjoint_clusters) {
 //			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
 //				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
 //			}
@@ -116,18 +117,18 @@ class Rider {
 		disjoint_clusters.clear();
 		disjoint_clusters.addAll(temp_disjoint_cluster);
 			
-        generateCrossProduct(0, new ArrayList<>());
-        System.out.println("All cross product generated");
-        List<List<Point>> temp_valid_ordering = new ArrayList<List<Point>>();
-        for (List<Point> combination : this.valid_orderings) {
-        	if(checkSDConstraint(combination)) {
-        		temp_valid_ordering.add(combination);
-	            combination.add(0, this.depot);
-	            combination.add(this.depot);
-        	}
-        }
-        this.valid_orderings.clear();
-        this.valid_orderings.addAll(temp_valid_ordering);
+		generateCrossProduct(0, new ArrayList<>());
+		System.out.println("All cross product generated");
+		List<List<Point>> temp_valid_ordering = new ArrayList<List<Point>>();
+		for (List<Point> combination : this.valid_orderings) {
+			if(checkSDConstraint(combination)) {
+				temp_valid_ordering.add(combination);
+				combination.add(0, this.depot);
+				combination.add(this.depot);
+			}
+		}
+		this.valid_orderings.clear();
+		this.valid_orderings.addAll(temp_valid_ordering);
     }
 
     private boolean checkSDConstraint(List<Point> combination) {
@@ -175,7 +176,7 @@ class Rider {
 	private void computeSeedValues(List<Point> sorted_list) {
 		if (sorted_list == null || sorted_list.isEmpty()) {
 			this.seed_lu_cost = 0;
-			this.seed_travel_time = 0.0;
+			this.lower_bound_lu_cost = 0;
 			this.seed_distance = 0.0;
 			return;
 		}
@@ -194,7 +195,7 @@ class Rider {
 		this.seed_distance = seedOrdering.getDistance();
 		// Travel time would be computed if the getTravelTime method is implemented
 		// For now, we can estimate it from the path computation
-		this.seed_travel_time = 0.0; // Placeholder - can be enhanced if needed
+		this.lower_bound_lu_cost = seedOrdering.computeLowerBoundLUCost(); // Placeholder - can be enhanced if needed
 		
 		System.out.println("\n========================================");
 		System.out.println("SEED ORDERING INFORMATION (Query " + this.query_id + ")");
@@ -216,7 +217,7 @@ class Rider {
 		System.out.println("\nComputed Seed Metrics:");
 		System.out.println("  Seed LU Cost: " + this.seed_lu_cost);
 		System.out.println("  Seed Distance: " + String.format("%.2f", this.seed_distance));
-		System.out.println("  Seed Travel Time: " + String.format("%.2f", this.seed_travel_time));
+		System.out.println("  Lower Bound LU Cost: " + this.lower_bound_lu_cost);
 		System.out.println("  Number of Processed Requests: " + seedOrdering.getNumberofProcessedRequests());
 		System.out.println("========================================\n");
 	}
@@ -448,8 +449,8 @@ class Rider {
 	 * Returns the seed travel time computed from the initial sorted ordering
 	 * @return seed travel time
 	 */
-	public double getSeedTravelTime() {
-		return this.seed_travel_time;
+	public int getLowerBoundLUCost() {
+		return this.lower_bound_lu_cost;
 	}
 	
         private List<Cluster> splitClusterBySpatialCoordinates(Cluster currentCluster) {
