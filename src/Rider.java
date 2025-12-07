@@ -90,12 +90,13 @@ class Rider {
 		//Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
 		Map<Integer,Boolean> prunedOnCapacity = new HashMap<Integer,Boolean>();
 		Map<Integer,Point> currentStack = new LinkedHashMap<Integer,Point>();
-		int i=0;
 		int seedLuCostDiff = this.seed_lu_cost - this.lower_bound_lu_cost;
 		//int current_consumption = 0;
 		// Walk each temporal cluster independently and compute feasible permutations
 		// while progressively tracking vehicle capacity already consumed.
 		//List<List<List<Point>>> allPermutedLists = new ArrayList<>();
+		
+		// Phase 1: Sequential setup - each cluster depends on previous state
 		for(Cluster cluster:disjoint_clusters) {
 //			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
 //				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
@@ -105,17 +106,22 @@ class Rider {
 			cluster.computeLowerBoundLUCost();
 			
 			// Set the seed LU cost difference for pruning
-			
 			cluster.setSeedLuCostDifference(seedLuCostDiff);
 			
 			cluster.filterOutBasedOnCapacity(currentStack, prunedOnCapacity);
 			//cluster.filterOutBasedOnTimeWindows(currentStack, prunedOnCapacity);
+		}
+		
+		// Phase 2: Parallel computation - clusters are now independent
+		AtomicInteger counter = new AtomicInteger(0);
+		disjoint_clusters.parallelStream().forEach(cluster -> {
 			cluster.computeValidOrderings();
 //			cluster.computeConsumption(current_consumptions);
 			cluster.validateAndPruneOrderings();
 			//allPermutedLists.add(cluster.getOrderings());
-			System.out.println("Pruning done for cluster "+ i++ + " Out of "+ disjoint_clusters.size());
-		}
+			int i = counter.incrementAndGet();
+			System.out.println("Pruning done for cluster "+ i + " Out of "+ disjoint_clusters.size());
+		});
 		System.out.println("All pruning done");
 		List<Cluster> temp_disjoint_cluster = new ArrayList<Cluster>();
 		for(Cluster cluster:disjoint_clusters) {
