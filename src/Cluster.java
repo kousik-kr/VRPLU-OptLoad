@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -21,6 +22,9 @@ class Cluster {
         private int min_overlap;
         private boolean luPruningEnabled = false;
         private int bestLuCost;
+        private int lower_bound_lu_cost;
+        private Map<Integer,Point> currentStackBeforeModification;
+        private int seedLuCostDifference = Integer.MAX_VALUE;
 
         /**
          * Lightweight stack state used to maintain the unavoidable LU lower bound while
@@ -197,6 +201,14 @@ class Cluster {
         public void setLuPruningEnabled(boolean enabled) {
                 this.luPruningEnabled = enabled;
         }
+        
+        /**
+         * Set the seed LU cost difference (seed_lu_cost - lower_bound_lu_cost) from Rider class
+         * to use as pruning threshold during backtracking.
+         */
+        public void setSeedLuCostDifference(int seedLuCostDifference) {
+                this.seedLuCostDifference = seedLuCostDifference;
+        }
 	
 	public void computeConsumption(Map<Integer,Point> current_pickups) {
 		for(Point point:this.points) {
@@ -243,9 +255,13 @@ class Cluster {
 ////		this.valid_orderings.putAll(updated_orderings);
 //	}
 	
-	public int filterOutBasedOnCapacity(Map<Integer,Boolean> prunedPoints) {
+	public void filterOutBasedOnCapacity(Map<Integer,Point> currentStack, Map<Integer,Boolean> prunedPoints) {
 		//Map<List<Point>,List<Integer>> updated_orderings = new HashMap<List<Point>,List<Integer>>();
-		List<Point> currentPrunedPoints = new ArrayList<Point>();
+		
+		// Store the current state of currentStack before modification
+		this.currentStackBeforeModification = new LinkedHashMap<Integer,Point>(currentStack);
+		
+                List<Point> currentPrunedPoints = new ArrayList<Point>();
 		for(Point point : points) {
 			if(prunedPoints.containsKey(point.getID())) {
 				currentPrunedPoints.add(point);
@@ -266,45 +282,66 @@ class Cluster {
 		}
 		
 		prunedPoints.putAll(prunedSources);
-		int current_consumption = 0;
+		//int current_consumption = 0;
 		for(Point point: points) {
 			if(point.getType()=="Source") {
-				current_consumption += point.getServiceObject().getServiceQuantity();
+				//current_consumption += point.getServiceObject().getServiceQuantity();
+				// Add pickup point to currentStack (yet to be delivered)
+				currentStack.put(point.getID(), point);
 			}
 			else if(point.getType()=="Destination") {
-				current_consumption -= point.getServiceObject().getServiceQuantity();
+				//current_consumption -= point.getServiceObject().getServiceQuantity();
+				// Remove delivered point from currentStack
+				currentStack.remove(point.getID());
 			}
 		}
-		return current_consumption;
+		//return current_consumption;
 //		this.valid_orderings.clear();
 //		this.valid_orderings.putAll(updated_orderings);
 	}
 
+        // private void filterOutBasedOnTimeWindows(Map<Integer,Point> currentStack, Map<Integer,Boolean> prunedPoints) {
+        //         double travel_time = computeTravelTime();
+
+        // }
+
+        // private double computeTravelTime() {
+        //         // Placeholder: Implement actual travel time computation based on points
+        //         double travel_time = 0.0;
+        //         for(int i=0; i<points.size()-1; i++) {
+        //                 Point p1 = points.get(i);
+        //                 Point p2 = points.get(i+1);
+        //                 travel_time += p1.travelTimeTo(p2); // Assuming distanceTo gives travel time
+        //         }
+
+        //         return travel_time;
+        // }
+
 	private int pruneOnCapacity(List<Point> originalPath) {
 		List<Point> path = new ArrayList<>(originalPath);
-        int worstIndex = -1;
-        int worstID = -1;
-        int minCapacity = Integer.MAX_VALUE;
+                int worstIndex = -1;
+                int worstID = -1;
+                int minCapacity = Integer.MAX_VALUE;
 
-        for (int i = 0; i < path.size(); i++) {
-            Point curr = path.get(i);
-            int currCapacity = curr.getServiceObject().getServiceQuantity();
-            if (curr.getType()=="Source" && currCapacity < minCapacity) {
-            		minCapacity = currCapacity;
-                worstIndex = i;
-                worstID = curr.getID();
-            }
+                for (int i = 0; i < path.size(); i++) {
+                Point curr = path.get(i);
+                int currCapacity = curr.getServiceObject().getServiceQuantity();
+                if (curr.getType()=="Source" && currCapacity < minCapacity) {
+                                minCapacity = currCapacity;
+                        worstIndex = i;
+                        worstID = curr.getID();
+                }
 
-        }
-        
-        if (worstIndex != -1) {
-            path.remove(worstIndex);
-        } 
-        
-        originalPath.clear();
-        originalPath.addAll(path);
-        
-        return worstID;
+                }
+                
+                if (worstIndex != -1) {
+                path.remove(worstIndex);
+                } 
+                
+                originalPath.clear();
+                originalPath.addAll(path);
+                
+                return worstID;
 		
 	}
 
@@ -356,7 +393,14 @@ class Cluster {
 
                                 StackState nextStackState = stackState.copy();
                                 nextStackState.pickup(p.getID());
-                                backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity + capacityChange, bottleneckCapacity, nextStackState);
+                                
+                                // Check LU cost pruning condition
+                                int currentLuCost = computeLuCostWithPreviousStack(current);
+                                int currentLuCostDiff = currentLuCost - this.lower_bound_lu_cost;
+                                
+                                if (currentLuCostDiff < this.seedLuCostDifference) {
+                                        backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity + capacityChange, bottleneckCapacity, nextStackState);
+                                }
 
                                 current.remove(current.size() - 1);
                                 sourcesAdded.remove(p.getID());
@@ -370,7 +414,14 @@ class Cluster {
 
                                         StackState nextStackState = stackState.copy();
                                         nextStackState.deliver(p.getID());
-                                        backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity - capacityChange, bottleneckCapacity, nextStackState);
+                                        
+                                        // Check LU cost pruning condition
+                                        int currentLuCost = computeLuCostWithPreviousStack(current);
+                                        int currentLuCostDiff = currentLuCost - this.lower_bound_lu_cost;
+                                        
+                                        if (currentLuCostDiff < this.seedLuCostDifference) {
+                                                backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity - capacityChange, bottleneckCapacity, nextStackState);
+                                        }
 
                                         current.remove(current.size() - 1);
                                         used[i] = false;
@@ -381,7 +432,14 @@ class Cluster {
 
                                         StackState nextStackState = stackState.copy();
                                         nextStackState.deliver(p.getID());
-                                        backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity - capacityChange, bottleneckCapacity, nextStackState);
+                                        
+                                        // Check LU cost pruning condition
+                                        int currentLuCost = computeLuCostWithPreviousStack(current);
+                                        int currentLuCostDiff = currentLuCost - this.lower_bound_lu_cost;
+                                        
+                                        if (currentLuCostDiff < this.seedLuCostDifference) {
+                                                backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity - capacityChange, bottleneckCapacity, nextStackState);
+                                        }
 
                                         current.remove(current.size() - 1);
                                         used[i] = false;
@@ -390,10 +448,54 @@ class Cluster {
                 }
         }
 
+        public void computeLowerBoundLUCost() {
+                this.lower_bound_lu_cost = 0;
+                for(Point point: this.points) {
+                        this.lower_bound_lu_cost += point.getServiceObject().getServiceQuantity();
+                }
+        }
+
+        public int getLowerBoundLUCost() {
+                return this.lower_bound_lu_cost;
+        }       
+
         private int computeLuCost(List<Point> ordering) {
                 int luCost = 0;
                 int currentLoad = 0;
                 for(Point point: ordering) {
+                        if(point.getType()=="Source") {
+                                int loadingCost = point.getServiceObject().getServiceQuantity();
+                                luCost += loadingCost;
+                                currentLoad += loadingCost;
+                        }
+                        else if(point.getType()=="Destination") {
+                                int unloadingCost = point.getServiceObject().getServiceQuantity();
+                                luCost += unloadingCost;
+                                currentLoad -= unloadingCost;
+                                luCost += 2*currentLoad;
+                        }
+                }
+                return luCost;
+        }
+        
+        /**
+         * Computes LU cost for the current partial ordering in this cluster,
+         * considering the previous stack state from currentStackBeforeModification.
+         * This accounts for items already loaded in previous clusters.
+         */
+        private int computeLuCostWithPreviousStack(List<Point> currentOrdering) {
+                int luCost = 0;
+                
+                // Start with the load from previous clusters (items in currentStackBeforeModification)
+                int currentLoad = 0;
+                if (this.currentStackBeforeModification != null) {
+                        for (Point stackPoint : this.currentStackBeforeModification.values()) {
+                                currentLoad += stackPoint.getServiceObject().getServiceQuantity();
+                        }
+                }
+                
+                // Process points in the current cluster ordering
+                for(Point point: currentOrdering) {
                         if(point.getType()=="Source") {
                                 int loadingCost = point.getServiceObject().getServiceQuantity();
                                 luCost += loadingCost;

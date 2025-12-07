@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -88,8 +89,10 @@ class Rider {
 
 		//Map<Integer,Point> current_consumptions = new HashMap<Integer, Point>();
 		Map<Integer,Boolean> prunedOnCapacity = new HashMap<Integer,Boolean>();
+		Map<Integer,Point> currentStack = new LinkedHashMap<Integer,Point>();
 		int i=0;
-		int current_consumption = 0;
+		int seedLuCostDiff = this.seed_lu_cost - this.lower_bound_lu_cost;
+		//int current_consumption = 0;
 		// Walk each temporal cluster independently and compute feasible permutations
 		// while progressively tracking vehicle capacity already consumed.
 		//List<List<List<Point>>> allPermutedLists = new ArrayList<>();
@@ -97,10 +100,16 @@ class Rider {
 //			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
 //				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
 //			}
-			
+			int current_consumption = computeConsumption(currentStack);
 			cluster.setAvailableCapacity(this.max_capacity-current_consumption);
-			current_consumption += cluster.filterOutBasedOnCapacity(prunedOnCapacity);
+			cluster.computeLowerBoundLUCost();
 			
+			// Set the seed LU cost difference for pruning
+			
+			cluster.setSeedLuCostDifference(seedLuCostDiff);
+			
+			cluster.filterOutBasedOnCapacity(currentStack, prunedOnCapacity);
+			//cluster.filterOutBasedOnTimeWindows(currentStack, prunedOnCapacity);
 			cluster.computeValidOrderings();
 //			cluster.computeConsumption(current_consumptions);
 			cluster.validateAndPruneOrderings();
@@ -130,6 +139,14 @@ class Rider {
 		this.valid_orderings.clear();
 		this.valid_orderings.addAll(temp_valid_ordering);
     }
+
+	private int computeConsumption(Map<Integer,Point> currentStack) {
+		int current_consumption = 0;
+		for(Point point: currentStack.values()) {
+			current_consumption += this.service_requests.get(point.getID()).getServiceQuantity();
+		}
+		return current_consumption;
+	}
 
     private boolean checkSDConstraint(List<Point> combination) {
 		Map<Integer, Point> sources = new HashMap<Integer, Point>();
