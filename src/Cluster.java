@@ -275,10 +275,15 @@ class Cluster {
 		while(this.points.size()>0 && !checkValidity(this.points)) {
 			int prunedPoint = pruneOnCapacity(this.points);
 			if(prunedPoint==-1) {
-				System.out.println("Invalid exception");
+				System.out.println("Could not find any point to prune!");
 				System.exit(0);
 			}
 			prunedSources.put(prunedPoint,true);
+			
+			// If we pruned a Destination whose Source is in currentStack, remove it from currentStack
+			if(currentStack.containsKey(prunedPoint)) {
+				currentStack.remove(prunedPoint);
+			}
 		}
 		
 		prunedPoints.putAll(prunedSources);
@@ -323,6 +328,7 @@ class Cluster {
                 int worstID = -1;
                 int minCapacity = Integer.MAX_VALUE;
 
+                // First, try to find a Source point to prune
                 for (int i = 0; i < path.size(); i++) {
                 Point curr = path.get(i);
                 int currCapacity = curr.getServiceObject().getServiceQuantity();
@@ -332,6 +338,20 @@ class Cluster {
                         worstID = curr.getID();
                 }
 
+                }
+                
+                // If no Source found, prune a Destination point (with smallest capacity)
+                if (worstIndex == -1) {
+                        minCapacity = Integer.MAX_VALUE;
+                        for (int i = 0; i < path.size(); i++) {
+                                Point curr = path.get(i);
+                                int currCapacity = curr.getServiceObject().getServiceQuantity();
+                                if (curr.getType()=="Destination" && currCapacity < minCapacity) {
+                                        minCapacity = currCapacity;
+                                        worstIndex = i;
+                                        worstID = curr.getID();
+                                }
+                        }
                 }
                 
                 if (worstIndex != -1) {
@@ -347,13 +367,38 @@ class Cluster {
 
 	private boolean checkValidity(List<Point> ordering) {
 		int current_consumption = 0;
-		for(Point point: ordering) {
-			if(point.getType()=="Source") {
-				current_consumption += point.getServiceObject().getServiceQuantity();
+                double departure_time = this.start_time;
+                double travel_time = 0.0;
+                int index = 0;
+		for(;index<ordering.size()-1;index++) {
+                        Point current_point = ordering.get(index);
+                        Point next_point = ordering.get(index+1);
+                        travel_time += current_point.travelTimeTo(departure_time, next_point);
+                        departure_time = this.start_time + travel_time;
+                        if(departure_time > next_point.getTimeWindow().getEndTime()) {
+                                return false;
+                        }
+
+			if(current_point.getType()=="Source") {
+				current_consumption += current_point.getServiceObject().getServiceQuantity();
 			}
-			else if(point.getType()=="Destination") {
-				current_consumption -= point.getServiceObject().getServiceQuantity();
+			else if(current_point.getType()=="Destination") {
+				current_consumption -= current_point.getServiceObject().getServiceQuantity();
 			}
+
+			if(current_consumption>this.available_capacity)
+				return false;
+
+                        if(index == ordering.size()-2) {
+                            // Check for the last point in the ordering
+                            Point last_point = ordering.get(index + 1);
+                            if(last_point.getType()=="Source") {
+                                    current_consumption += last_point.getServiceObject().getServiceQuantity();
+                            }
+                            else if(last_point.getType()=="Destination") {
+                                    current_consumption -= last_point.getServiceObject().getServiceQuantity();
+                            }
+                        }       
 			
 			if(current_consumption>this.available_capacity)
 				return false;

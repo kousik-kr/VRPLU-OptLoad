@@ -391,7 +391,7 @@ class Ordering implements RoutePlan {
         		System.exit(1);
         }
         
-        removePair(worstID);
+        // Note: removePair(worstID) removed - updateDetails() already removes the point from valid_order
     }
 
 	private void updateDetails(int worstIndex, Path pathToReplace) {
@@ -440,10 +440,18 @@ class Ordering implements RoutePlan {
 
 	private void removePair(int worstID) {
 		int i=1;
+		boolean found = false;
 		for(;i<this.valid_order.size()-1;i++) {
-			if(this.valid_order.get(i).getID()==worstID)
+			if(this.valid_order.get(i).getID()==worstID) {
+				found = true;
 				break;
+			}
 		}
+		
+		if(!found || i <= 0 || i >= this.valid_order.size() - 1) {
+			return;
+		}
+		
 		Point prev = this.valid_order.get(i - 1);
         Point next = this.valid_order.get(i + 1);
 

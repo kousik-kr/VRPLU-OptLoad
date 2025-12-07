@@ -23,7 +23,7 @@ class Point {
 	 * @param other The destination point
 	 * @return The minimum travel time from this point to the other point
 	 */
-	public double travelTimeTo(Point other) {
+	public double travelTimeTo(double departureTime, Point other) {
 		int sourceID = this.node.getNodeID();
 		int destID = other.getNode().getNodeID();
 		if(sourceID == destID) {
@@ -77,7 +77,7 @@ class Point {
 				continue;
 			}
 			
-			double currentTime = this.time_window.getStartTime() + gScore.get(current);
+			double currentTime = departureTime + gScore.get(current);
 			
 			for(Map.Entry<Integer, Edge> entry : outgoingEdges.entrySet()) {
 				int neighbor = entry.getKey();
