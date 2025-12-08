@@ -1,0 +1,129 @@
+[Depot:199309,S3:161144,D3:85354,S4:119968,D4:200360,Depot:199309]	Number of Successful Requests:4	L-U Cost:8	Distance:58151.99494529019
+5.686
+
+[Depot:128506,S4:121952,D4:257380,Depot:128506]	Number of Successful Requests:1	L-U Cost:2	Distance:7697.6915854649915
+1.432
+
+[Depot:130565,S5:77285,D5:108665,Depot:130565]	Number of Successful Requests:2	L-U Cost:4	Distance:35663.888541571185
+1.482
+
+[Depot:235053,S5:224388,D5:124662,Depot:235053]	Number of Successful Requests:1	L-U Cost:2	Distance:59687.642822758266
+3.432
+
+[Depot:224266,S3:197680,D3:101476,S2:29399,S4:11695,D4:276481,Depot:224266]	Number of Successful Requests:8	L-U Cost:28	Distance:82996.66823335909
+2.53
+
+[Depot:41260,S1:40674,S5:37297,S4:70887,D4:135607,Depot:41260]	Number of Successful Requests:4	L-U Cost:26	Distance:46715.26765736878
+2.792
+
+[Depot:245865,S5:127032,D5:203792,Depot:245865]	Number of Successful Requests:1	L-U Cost:2	Distance:39019.90799722216
+2.781
+
+[Depot:77492,S4:52077,D4:11508,Depot:77492]	Number of Successful Requests:2	L-U Cost:4	Distance:29798.180262993075
+1.04
+
+[Depot:64936,S2:14743,D2:18432,S4:135687,D4:65944,Depot:64936]	Number of Successful Requests:4	L-U Cost:8	Distance:72545.76311377306
+1.97
+
+[Depot:56196,S2:117723,S4:155758,S3:219344,D3:79321,Depot:56196]	Number of Successful Requests:2	L-U Cost:25	Distance:54019.1000530399
+1.829
+
+[Depot:209172,S2:208271,S1:38918,D1:6483,Depot:209172]	Number of Successful Requests:1	L-U Cost:11	Distance:69793.55541866743
+2.822
+
+[Depot:95719,S1:115170,D1:114398,Depot:95719]	Number of Successful Requests:3	L-U Cost:6	Distance:35330.726383699264
+2.275
+
+[Depot:122367,S5:85519,D5:142527,Depot:122367]	Number of Successful Requests:2	L-U Cost:4	Distance:31302.25355846522
+1.635
+
+[Depot:150425,S5:62551,S1:75853,D1:98838,S3:99198,D3:55252,Depot:150425]	Number of Successful Requests:8	L-U Cost:21	Distance:54887.101630692094
+1.814
+
+[Depot:166582,S2:212999,D2:132903,Depot:166582]	Number of Successful Requests:2	L-U Cost:4	Distance:30334.56840391585
+1.244
+
+[Depot:84599,S5:151121,S2:221866,D5:221407,D2:217842,Depot:84599]	Number of Successful Requests:2	L-U Cost:6	Distance:55691.88305146288
+0.937
+
+[Depot:196684,S1:237018,S3:134800,S2:272161,D3:126672,D2:210153,Depot:196684]	Number of Successful Requests:4	L-U Cost:27	Distance:77158.26393362437
+3.059
+
+[Depot:243214,S5:178538,D5:215083,Depot:243214]	Number of Successful Requests:4	L-U Cost:8	Distance:80825.96699551077
+1.325
+
+[Depot:86455,S3:90234,S2:170003,D2:100349,Depot:86455]	Number of Successful Requests:5	L-U Cost:13	Distance:49371.41873132567
+1.917
+
+[Depot:57727,S5:32829,S2:84763,S1:81512,D2:278419,D1:177645,Depot:57727]	Number of Successful Requests:4	L-U Cost:24	Distance:75261.14470962273
+2.564
+
+[Depot:185658,S6:210875,D6:70813,Depot:185658]	Number of Successful Requests:1	L-U Cost:2	Distance:48433.273059288695
+3.553
+
+[Depot:84288,S3:163442,S6:202209,D3:16518,Depot:84288]	Number of Successful Requests:5	L-U Cost:16	Distance:62125.17962355416
+5.647
+
+[Depot:64268,S5:152016,S6:120796,S7:134989,D6:145781,S4:251564,D7:186105,S8:191137,D8:198640,Depot:64268]	Number of Successful Requests:7	L-U Cost:56	Distance:105071.0076068377
+5.89
+
+[Depot:222538,S4:234904,S1:180019,S7:139114,D7:71447,Depot:222538]	Number of Successful Requests:1	L-U Cost:20	Distance:61104.053342207095
+3.117
+
+[Depot:44803,S8:72237,D8:104069,Depot:44803]	Number of Successful Requests:5	L-U Cost:10	Distance:38423.71318984675
+4.4
+
+[Depot:166154,S7:138265,S8:262112,D8:165394,Depot:166154]	Number of Successful Requests:1	L-U Cost:14	Distance:17206.21839931929
+1.703
+
+[Depot:145715,S4:106803,S7:188955,D7:136277,Depot:145715]	Number of Successful Requests:2	L-U Cost:7	Distance:53929.229520736946
+4.757
+
+[Depot:146577,S7:113692,D7:44437,Depot:146577]	Number of Successful Requests:1	L-U Cost:2	Distance:27391.07787652951
+1.937
+
+[Depot:250231,S7:165803,S3:89797,D7:220441,S1:233964,Depot:250231]	Number of Successful Requests:5	L-U Cost:23	Distance:51300.40672111538
+4.229
+
+[Depot:148264,S6:98576,S4:262172,D4:255877,S8:88262,D8:107392,Depot:148264]	Number of Successful Requests:5	L-U Cost:35	Distance:54786.468302543806
+3.448
+
+[Depot:101197,S10:143349,S5:181393,S6:250145,D6:221141,Depot:101197]	Number of Successful Requests:2	L-U Cost:25	Distance:48145.68144866655
+3.402
+
+[Depot:262920,S5:105278,S8:194968,S10:166066,S4:89317,D4:230084,Depot:262920]	Number of Successful Requests:1	L-U Cost:20	Distance:88426.62654113508
+6.696
+
+[Depot:246427,S10:259222,S5:179793,S1:259487,D1:280146,Depot:246427]	Number of Successful Requests:3	L-U Cost:18	Distance:91392.02042183909
+5.854
+
+[Depot:74658,S6:48698,D6:176797,Depot:74658]	Number of Successful Requests:3	L-U Cost:6	Distance:34957.65500565812
+2.319
+
+[Depot:4296,S10:14150,S3:34306,S7:57370,D7:3325,Depot:4296]	Number of Successful Requests:1	L-U Cost:20	Distance:40619.903527662646
+3.555
+
+[Depot:115977,S7:115724,D7:262066,S2:8053,Depot:115977]	Number of Successful Requests:4	L-U Cost:9	Distance:41241.2161020527
+2.853
+
+[Depot:258130,S7:117327,S5:91964,D5:240323,Depot:258130]	Number of Successful Requests:2	L-U Cost:13	Distance:45096.28509325699
+3.226
+
+[Depot:126616,S8:123511,S7:80360,S5:31826,D5:253580,Depot:126616]	Number of Successful Requests:4	L-U Cost:32	Distance:53793.71077525382
+6.375
+
+[Depot:14820,S7:24445,D7:88465,S5:142467,S3:136668,D3:113502,Depot:14820]	Number of Successful Requests:6	L-U Cost:15	Distance:90790.17665118544
+7.731
+
+[Depot:83320,S10:90284,D10:181932,Depot:83320]	Number of Successful Requests:2	L-U Cost:4	Distance:55625.07874209953
+2.994
+
+[Depot:63550,S6:271017,S1:159359,D6:76483,S12:269581,D12:152265,Depot:63550]	Number of Successful Requests:9	L-U Cost:33	Distance:63226.05518558025
+6.853
+
+[Depot:254468,S11:155872,S3:140662,S4:266836,D4:19396,Depot:254468]	Number of Successful Requests:2	L-U Cost:16	Distance:57231.78369852521
+6.623
+
+[Depot:283269,S15:4177,S12:278393,S10:92747,D12:54852,Depot:283269]	Number of Successful Requests:3	L-U Cost:24	Distance:52340.95974613381
+5.653
+

@@ -49,6 +49,8 @@ public class InsertionHeuristicSolver {
 
         public List<RoutePlan> solve() {
                 System.out.println("Starting insertion heuristic solver for query " + query.getID());
+                System.out.println("  Services: " + query.getServices().size() + ", Capacity: " + query.getCapacity() + ", Time window: [" + query.getQueryStartTime() + ", " + query.getQueryEndTime() + "]");
+                
                 List<Point> currentRoute = new ArrayList<Point>();
                 currentRoute.add(query.getDepot());
                 currentRoute.add(query.getDepot());
@@ -59,18 +61,23 @@ public class InsertionHeuristicSolver {
                 pendingRequests.sort(Comparator.comparingDouble(
                                 service -> service.getStartPoint().getTimeWindow().getStartTime()));
 
+                int insertedCount = 0;
                 for (Service request : pendingRequests) {
                         RouteEvaluation bestInsertion = findBestInsertion(currentRoute, currentEval, request);
                         if (bestInsertion != null) {
                                 currentRoute = bestInsertion.route;
                                 currentEval = bestInsertion;
+                                insertedCount++;
+                                if (insertedCount % 5 == 0 || insertedCount == pendingRequests.size()) {
+                                        System.out.println("    Inserted " + insertedCount + "/" + pendingRequests.size() + " services, current: " + currentEval.processedRequests + " requests, LU cost: " + currentEval.luCost + ", distance: " + String.format("%.2f", currentEval.distance));
+                                }
                         }
                 }
 
                 List<RoutePlan> result = new ArrayList<RoutePlan>();
                 result.add(new ExactSolution(currentRoute, currentEval.processedRequests, currentEval.luCost,
                                 currentEval.distance));
-                System.out.println("Finished insertion heuristic solver for query " + query.getID());
+                System.out.println("  Finished: " + currentEval.processedRequests + " requests, LU cost: " + currentEval.luCost + ", Distance: " + String.format("%.2f", currentEval.distance));
                 return result;
         }
 

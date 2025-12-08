@@ -81,6 +81,8 @@ public class LifoStackSolver {
 
     public List<RoutePlan> solve() {
         System.out.println("Starting LIFO stack solver for query " + query.getID());
+        System.out.println("  Services: " + serviceStates.size() + ", Capacity: " + query.getCapacity() + ", Time window: [" + query.getQueryStartTime() + ", " + query.getQueryEndTime() + "]");
+        
         List<Point> route = new ArrayList<>();
         route.add(query.getDepot());
 
@@ -90,11 +92,17 @@ public class LifoStackSolver {
         double totalDistance = 0;
         int luCost = 0;
         int completedQuantity = 0;
+        int moveCount = 0;
 
         while (!allDelivered()) {
             MoveCandidate best = selectNextMove(currentPoint, currentTime, currentLoad);
             if (best == null) {
+                System.out.println("  No more feasible moves after " + moveCount + " moves");
                 break;
+            }
+            moveCount++;
+            if (moveCount % 5 == 0) {
+                System.out.println("    Move " + moveCount + ": " + completedQuantity + " requests completed, load: " + currentLoad + ", distance: " + String.format("%.2f", totalDistance));
             }
 
             ServiceState state = serviceStates.get(best.serviceId);
@@ -131,7 +139,7 @@ public class LifoStackSolver {
 
         List<RoutePlan> result = new ArrayList<>();
         result.add(new ExactSolution(route, completedQuantity, luCost, totalDistance));
-        System.out.println("Finished LIFO stack solver for query " + query.getID());
+        System.out.println("  Finished: " + completedQuantity + " requests, LU cost: " + luCost + ", Distance: " + String.format("%.2f", totalDistance) + " (" + moveCount + " moves)");
         return result;
     }
 

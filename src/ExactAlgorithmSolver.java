@@ -58,42 +58,61 @@ public class ExactAlgorithmSolver {
 
     public List<ExactSolution> solve() {
         System.out.println("Starting OptLoad exact solver for query " + query.getID());
+        System.out.println("  Services: " + pickups.size() + ", Capacity: " + query.getCapacity() + ", Time window: [" + query.getQueryStartTime() + ", " + query.getQueryEndTime() + "]");
+        
         boolean[] picked = new boolean[pickups.size()];
         boolean[] delivered = new boolean[pickups.size()];
 
         List<Point> route = new ArrayList<>();
         route.add(depot);
 
+        long startTime = System.currentTimeMillis();
         explore(depot, query.getQueryStartTime(), 0, 0, 0, 0, picked, delivered, route);
+        long elapsed = System.currentTimeMillis() - startTime;
 
         if (bestSolution == null) {
-            System.out.println("OptLoad exact solver finished without a feasible route for query " + query.getID());
+            System.out.println("  No feasible solution found after " + elapsed + " ms");
             return Collections.emptyList();
         }
-        System.out.println("Finished OptLoad exact solver for query " + query.getID());
+
+        System.out.println("  Found solution: " + bestSolution.getNumberofProcessedRequests() + " requests, LU cost: " + bestSolution.getLUCost() + ", Distance: " + String.format("%.2f", bestSolution.getDistance()) + " (" + elapsed + " ms)");
         return Collections.singletonList(bestSolution);
     }
 
+    private static long explorationCount = 0;
+    private static long lastReportTime = 0;
+    
     private void explore(Point currentPoint, double currentTime, double distance, int luCost, int load,
             int completedQuantity, boolean[] picked, boolean[] delivered, List<Point> route) {
 
-        if (allDelivered(delivered)) {
+        explorationCount++;
+        long currentMillis = System.currentTimeMillis();
+        if (currentMillis - lastReportTime > 5000) {  // Report every 5 seconds
+            lastReportTime = currentMillis;
+            System.out.println("    Explored " + explorationCount + " states, current best: " + 
+                             (bestSolution != null ? bestSolution.getNumberofProcessedRequests() + " requests" : "none"));
+        }
+        
+        // Check if we can return to depot and update best solution (for both complete and partial solutions)
+        // Only save solution if we've actually delivered something (completedQuantity > 0)
+        if (load == 0 && completedQuantity > 0) {  // Truck is empty and we've completed some deliveries
             LegResult backLeg = shortestLeg(currentPoint.getNode().getNodeID(), depot.getNode().getNodeID(), currentTime);
-            if (backLeg == null) {
-                return;
+            if (backLeg != null) {
+                double arrivalAtDepot = Math.max(backLeg.arrivalTime, depot.getTimeWindow().getStartTime());
+                if (arrivalAtDepot <= query.getQueryEndTime()) {
+                    List<Point> completedRoute = new ArrayList<>(route);
+                    completedRoute.add(depot);
+                    ExactSolution solution = new ExactSolution(completedRoute, completedQuantity, luCost,
+                            distance + backLeg.distance);
+                    updateBestSolution(solution);
+                    
+                    // If all delivered, return (complete solution found)
+                    if (allDelivered(delivered)) {
+                        return;
+                    }
+                    // Otherwise, continue exploring to potentially find better partial/complete solutions
+                }
             }
-
-            double arrivalAtDepot = Math.max(backLeg.arrivalTime, depot.getTimeWindow().getStartTime());
-            if (arrivalAtDepot > query.getQueryEndTime()) {
-                return;
-            }
-
-            List<Point> completedRoute = new ArrayList<>(route);
-            completedRoute.add(depot);
-            ExactSolution solution = new ExactSolution(completedRoute, completedQuantity, luCost,
-                    distance + backLeg.distance);
-            updateBestSolution(solution);
-            return;
         }
 
         int remainingQuantity = remainingQuantity(delivered);
