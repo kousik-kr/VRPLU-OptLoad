@@ -212,7 +212,7 @@ class Cluster {
 	
 	public void computeConsumption(Map<Integer,Point> current_pickups) {
 		for(Point point:this.points) {
-			if(point.getType()=="Source") {
+			if("Source".equals(point.getType())) {
 				current_pickups.put(point.getID(), point);
 			}
 			else {
@@ -289,12 +289,12 @@ class Cluster {
 		prunedPoints.putAll(prunedSources);
 		//int current_consumption = 0;
 		for(Point point: points) {
-			if(point.getType()=="Source") {
+			if("Source".equals(point.getType())) {
 				//current_consumption += point.getServiceObject().getServiceQuantity();
 				// Add pickup point to currentStack (yet to be delivered)
 				currentStack.put(point.getID(), point);
 			}
-			else if(point.getType()=="Destination") {
+			else if("Destination".equals(point.getType())) {
 				//current_consumption -= point.getServiceObject().getServiceQuantity();
 				// Remove delivered point from currentStack
 				currentStack.remove(point.getID());
@@ -332,7 +332,7 @@ class Cluster {
                 for (int i = 0; i < path.size(); i++) {
                 Point curr = path.get(i);
                 int currCapacity = curr.getServiceObject().getServiceQuantity();
-                if (curr.getType()=="Source" && currCapacity < minCapacity) {
+                if ("Source".equals(curr.getType()) && currCapacity < minCapacity) {
                                 minCapacity = currCapacity;
                         worstIndex = i;
                         worstID = curr.getID();
@@ -346,7 +346,7 @@ class Cluster {
                         for (int i = 0; i < path.size(); i++) {
                                 Point curr = path.get(i);
                                 int currCapacity = curr.getServiceObject().getServiceQuantity();
-                                if (curr.getType()=="Destination" && currCapacity < minCapacity) {
+                                if ("Destination".equals(curr.getType()) && currCapacity < minCapacity) {
                                         minCapacity = currCapacity;
                                         worstIndex = i;
                                         worstID = curr.getID();
@@ -379,10 +379,10 @@ class Cluster {
                                 return false;
                         }
 
-			if(current_point.getType()=="Source") {
+			if("Source".equals(current_point.getType())) {
 				current_consumption += current_point.getServiceObject().getServiceQuantity();
 			}
-			else if(current_point.getType()=="Destination") {
+			else if("Destination".equals(current_point.getType())) {
 				current_consumption -= current_point.getServiceObject().getServiceQuantity();
 			}
 
@@ -392,10 +392,10 @@ class Cluster {
                         if(index == ordering.size()-2) {
                             // Check for the last point in the ordering
                             Point last_point = ordering.get(index + 1);
-                            if(last_point.getType()=="Source") {
+                            if("Source".equals(last_point.getType())) {
                                     current_consumption += last_point.getServiceObject().getServiceQuantity();
                             }
-                            else if(last_point.getType()=="Destination") {
+                            else if("Destination".equals(last_point.getType())) {
                                     current_consumption -= last_point.getServiceObject().getServiceQuantity();
                             }
                         }       
@@ -431,7 +431,7 @@ class Cluster {
                         int capacityChange = p.getServiceObject().getServiceQuantity();
 
                         // Allow source point
-                        if (p.getType()=="Source") {
+                        if ("Source".equals(p.getType())) {
                                 used[i] = true;
                                 sourcesAdded.add(p.getID());
                                 current.add(p);
@@ -452,7 +452,7 @@ class Cluster {
                                 used[i] = false;
                         }
                         // Allow destination only if source has been added
-                        else if (p.getType()=="Destination") {
+                        else if ("Destination".equals(p.getType())) {
                                 if(both.contains(p.getID()) && sourcesAdded.contains(p.getID())) {
                                         used[i] = true;
                                         current.add(p);
@@ -508,12 +508,12 @@ class Cluster {
                 int luCost = 0;
                 int currentLoad = 0;
                 for(Point point: ordering) {
-                        if(point.getType()=="Source") {
+                        if("Source".equals(point.getType())) {
                                 int loadingCost = point.getServiceObject().getServiceQuantity();
                                 luCost += loadingCost;
                                 currentLoad += loadingCost;
                         }
-                        else if(point.getType()=="Destination") {
+                        else if("Destination".equals(point.getType())) {
                                 int unloadingCost = point.getServiceObject().getServiceQuantity();
                                 luCost += unloadingCost;
                                 currentLoad -= unloadingCost;
@@ -541,12 +541,12 @@ class Cluster {
                 
                 // Process points in the current cluster ordering
                 for(Point point: currentOrdering) {
-                        if(point.getType()=="Source") {
+                        if("Source".equals(point.getType())) {
                                 int loadingCost = point.getServiceObject().getServiceQuantity();
                                 luCost += loadingCost;
                                 currentLoad += loadingCost;
                         }
-                        else if(point.getType()=="Destination") {
+                        else if("Destination".equals(point.getType())) {
                                 int unloadingCost = point.getServiceObject().getServiceQuantity();
                                 luCost += unloadingCost;
                                 currentLoad -= unloadingCost;

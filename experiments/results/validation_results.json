@@ -1,0 +1,452 @@
+{
+  "N10_R1_Exact": {
+    "query_id": "N10_R1",
+    "algorithm": "Exact",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R1_ExactLIFO": {
+    "query_id": "N10_R1",
+    "algorithm": "ExactLIFO",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R1_Insertion": {
+    "query_id": "N10_R1",
+    "algorithm": "Insertion",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R1_OptLoad": {
+    "query_id": "N10_R1",
+    "algorithm": "OptLoad",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R1_FoodMatch": {
+    "query_id": "N10_R1",
+    "algorithm": "FoodMatch",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R1_Bazelmans": {
+    "query_id": "N10_R1",
+    "algorithm": "Bazelmans",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R2_Exact": {
+    "query_id": "N10_R2",
+    "algorithm": "Exact",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R2_ExactLIFO": {
+    "query_id": "N10_R2",
+    "algorithm": "ExactLIFO",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R2_Insertion": {
+    "query_id": "N10_R2",
+    "algorithm": "Insertion",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R2_OptLoad": {
+    "query_id": "N10_R2",
+    "algorithm": "OptLoad",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R2_FoodMatch": {
+    "query_id": "N10_R2",
+    "algorithm": "FoodMatch",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R2_Bazelmans": {
+    "query_id": "N10_R2",
+    "algorithm": "Bazelmans",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R3_Exact": {
+    "query_id": "N10_R3",
+    "algorithm": "Exact",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R3_ExactLIFO": {
+    "query_id": "N10_R3",
+    "algorithm": "ExactLIFO",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R3_Insertion": {
+    "query_id": "N10_R3",
+    "algorithm": "Insertion",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R3_OptLoad": {
+    "query_id": "N10_R3",
+    "algorithm": "OptLoad",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R3_FoodMatch": {
+    "query_id": "N10_R3",
+    "algorithm": "FoodMatch",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R3_Bazelmans": {
+    "query_id": "N10_R3",
+    "algorithm": "Bazelmans",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R4_Exact": {
+    "query_id": "N10_R4",
+    "algorithm": "Exact",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R4_ExactLIFO": {
+    "query_id": "N10_R4",
+    "algorithm": "ExactLIFO",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R4_Insertion": {
+    "query_id": "N10_R4",
+    "algorithm": "Insertion",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R4_OptLoad": {
+    "query_id": "N10_R4",
+    "algorithm": "OptLoad",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R4_FoodMatch": {
+    "query_id": "N10_R4",
+    "algorithm": "FoodMatch",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R4_Bazelmans": {
+    "query_id": "N10_R4",
+    "algorithm": "Bazelmans",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R5_Exact": {
+    "query_id": "N10_R5",
+    "algorithm": "Exact",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R5_ExactLIFO": {
+    "query_id": "N10_R5",
+    "algorithm": "ExactLIFO",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R5_Insertion": {
+    "query_id": "N10_R5",
+    "algorithm": "Insertion",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R5_OptLoad": {
+    "query_id": "N10_R5",
+    "algorithm": "OptLoad",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R5_FoodMatch": {
+    "query_id": "N10_R5",
+    "algorithm": "FoodMatch",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  },
+  "N10_R5_Bazelmans": {
+    "query_id": "N10_R5",
+    "algorithm": "Bazelmans",
+    "is_valid": true,
+    "precedence_valid": true,
+    "capacity_valid": true,
+    "time_window_valid": true,
+    "lu_cost_valid": true,
+    "computed_lu_cost": null,
+    "reported_lu_cost": null,
+    "errors": [],
+    "warnings": [
+      "Route details not available for validation"
+    ]
+  }
+}

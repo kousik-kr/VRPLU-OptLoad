@@ -1,0 +1,230 @@
+{
+  "10": {
+    "OptLoad": {
+      "count": 94,
+      "total": 100,
+      "served_mean": 23.51063829787234,
+      "served_std": 5.378730137351024,
+      "lu_cost_mean": 122.95744680851064,
+      "lu_cost_std": 48.45482978663144,
+      "runtime_mean": 33893.03
+    },
+    "Insertion": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 13.45,
+      "served_std": 3.2198602454143876,
+      "lu_cost_mean": 66.6,
+      "lu_cost_std": 26.885683922861254,
+      "runtime_mean": 6544.79
+    },
+    "ExactLIFO": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.71,
+      "served_std": 4.262147346115571,
+      "lu_cost_mean": 39.93,
+      "lu_cost_std": 22.91822637116581,
+      "runtime_mean": 340.89
+    },
+    "FoodMatch": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.8,
+      "served_std": 4.214261501141095,
+      "lu_cost_mean": 38.98,
+      "lu_cost_std": 20.508525056668507,
+      "runtime_mean": 308.82
+    }
+  },
+  "20": {
+    "OptLoad": {
+      "count": 64,
+      "total": 100,
+      "served_mean": 35.84375,
+      "served_std": 10.150767751135872,
+      "lu_cost_mean": 224.421875,
+      "lu_cost_std": 97.04763725348688,
+      "runtime_mean": 150346.95
+    },
+    "Insertion": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 14.16,
+      "served_std": 3.321806737304264,
+      "lu_cost_mean": 77.86,
+      "lu_cost_std": 25.842995182447407,
+      "runtime_mean": 7862.5
+    },
+    "ExactLIFO": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.49,
+      "served_std": 4.167721199888495,
+      "lu_cost_mean": 50.93,
+      "lu_cost_std": 31.894280051444962,
+      "runtime_mean": 664.49
+    },
+    "FoodMatch": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.58,
+      "served_std": 4.123542166632955,
+      "lu_cost_mean": 48.44,
+      "lu_cost_std": 26.443267574186063,
+      "runtime_mean": 639.04
+    }
+  },
+  "40": {
+    "OptLoad": {
+      "count": 30,
+      "total": 100,
+      "served_mean": 63.86666666666667,
+      "served_std": 14.518340890825721,
+      "lu_cost_mean": 483.03333333333336,
+      "lu_cost_std": 191.52049208606604,
+      "runtime_mean": 259191.43
+    },
+    "Insertion": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 16.49,
+      "served_std": 4.299988372077301,
+      "lu_cost_mean": 98.42,
+      "lu_cost_std": 39.36932308282681,
+      "runtime_mean": 19223.82
+    },
+    "ExactLIFO": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.56,
+      "served_std": 3.558988620380796,
+      "lu_cost_mean": 62.35,
+      "lu_cost_std": 31.656081564211323,
+      "runtime_mean": 1398.38
+    },
+    "FoodMatch": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.54,
+      "served_std": 3.5282290175100597,
+      "lu_cost_mean": 56.56,
+      "lu_cost_std": 24.262860507368046,
+      "runtime_mean": 1356.79
+    }
+  },
+  "60": {
+    "OptLoad": {
+      "count": 8,
+      "total": 100,
+      "served_mean": 80.625,
+      "served_std": 18.06195933446867,
+      "lu_cost_mean": 594.75,
+      "lu_cost_std": 352.5520351664418,
+      "runtime_mean": 291389.9
+    },
+    "Insertion": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 16.48,
+      "served_std": 4.614065452504981,
+      "lu_cost_mean": 99.84,
+      "lu_cost_std": 36.81703953334652,
+      "runtime_mean": 34744.77
+    },
+    "ExactLIFO": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 8.42,
+      "served_std": 4.656565257783896,
+      "lu_cost_mean": 70.15,
+      "lu_cost_std": 43.889719753035564,
+      "runtime_mean": 2233.91
+    },
+    "FoodMatch": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 8.61,
+      "served_std": 4.778901547426981,
+      "lu_cost_mean": 62.92,
+      "lu_cost_std": 35.76917108349032,
+      "runtime_mean": 2232.0
+    }
+  },
+  "80": {
+    "OptLoad": {
+      "count": 5,
+      "total": 100,
+      "served_mean": 90.4,
+      "served_std": 47.183047803209995,
+      "lu_cost_mean": 917.0,
+      "lu_cost_std": 575.9468725498906,
+      "runtime_mean": 290816.35
+    },
+    "Insertion": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 16.82,
+      "served_std": 3.8167525463409335,
+      "lu_cost_mean": 107.48,
+      "lu_cost_std": 36.61324350559507,
+      "runtime_mean": 46203.04
+    },
+    "ExactLIFO": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.55,
+      "served_std": 4.854636958620078,
+      "lu_cost_mean": 56.04,
+      "lu_cost_std": 32.48258610394191,
+      "runtime_mean": 2678.28
+    },
+    "FoodMatch": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 7.5,
+      "served_std": 4.867237409455183,
+      "lu_cost_mean": 52.49,
+      "lu_cost_std": 28.86676116227797,
+      "runtime_mean": 2630.89
+    }
+  },
+  "100": {
+    "OptLoad": {
+      "count": 2,
+      "total": 100,
+      "served_mean": 76.5,
+      "served_std": 34.5,
+      "lu_cost_mean": 495.5,
+      "lu_cost_std": 236.5,
+      "runtime_mean": 292892.65
+    },
+    "Insertion": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 18.05,
+      "served_std": 4.836062447901185,
+      "lu_cost_mean": 117.1,
+      "lu_cost_std": 40.785659244396186,
+      "runtime_mean": 57494.65
+    },
+    "ExactLIFO": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 8.31,
+      "served_std": 5.147222552017738,
+      "lu_cost_mean": 71.16,
+      "lu_cost_std": 58.3711778191943,
+      "runtime_mean": 3169.08
+    },
+    "FoodMatch": {
+      "count": 100,
+      "total": 100,
+      "served_mean": 8.29,
+      "served_std": 5.187089742813402,
+      "lu_cost_mean": 60.57,
+      "lu_cost_std": 40.01930908948829,
+      "runtime_mean": 3122.19
+    }
+  }
+}

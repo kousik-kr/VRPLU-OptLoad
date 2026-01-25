@@ -101,8 +101,9 @@ class Rider {
 //			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
 //				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
 //			}
-			int current_consumption = computeConsumption(currentStack);
-			cluster.setAvailableCapacity(this.max_capacity-current_consumption);
+			// For now, give each cluster the full capacity to enumerate orderings
+			// Capacity constraints will be enforced during final validation
+			cluster.setAvailableCapacity(this.max_capacity);
 			cluster.computeLowerBoundLUCost();
 			
 			// Set the seed LU cost difference for pruning
@@ -114,13 +115,15 @@ class Rider {
 		
 		// Phase 2: Parallel computation - clusters are now independent
 		AtomicInteger counter = new AtomicInteger(0);
+		
 		disjoint_clusters.parallelStream().forEach(cluster -> {
 			cluster.computeValidOrderings();
 //			cluster.computeConsumption(current_consumptions);
 			cluster.validateAndPruneOrderings();
 			//allPermutedLists.add(cluster.getOrderings());
 			int i = counter.incrementAndGet();
-			System.out.println("Pruning done for cluster "+ i + " Out of "+ disjoint_clusters.size());
+			System.out.println("Pruning done for cluster "+ i + " Out of "+ disjoint_clusters.size() + 
+			                   " (size=" + cluster.getSize() + ", orderings=" + cluster.getOrderings().size() + ")");
 		});
 		System.out.println("All pruning done");
 		List<Cluster> temp_disjoint_cluster = new ArrayList<Cluster>();
@@ -133,7 +136,7 @@ class Rider {
 		disjoint_clusters.addAll(temp_disjoint_cluster);
 			
 		generateCrossProduct(0, new ArrayList<>());
-		System.out.println("All cross product generated");
+		System.out.println("All cross product generated. Total orderings: " + this.valid_orderings.size());
 		List<List<Point>> temp_valid_ordering = new ArrayList<List<Point>>();
 		for (List<Point> combination : this.valid_orderings) {
 			if(checkSDConstraint(combination)) {
@@ -157,10 +160,10 @@ class Rider {
     private boolean checkSDConstraint(List<Point> combination) {
 		Map<Integer, Point> sources = new HashMap<Integer, Point>();
 		for(Point point: combination) {
-			if(point.getType()=="Source") {
+			if("Source".equals(point.getType())) {
 				sources.put(point.getID(), point);
 			}
-			else if(point.getType()=="Destination") {
+			else if("Destination".equals(point.getType())) {
 				if(!sources.containsKey(point.getID())) {
 					return false;
 				}
@@ -169,7 +172,14 @@ class Rider {
 		return true;
 	}
 
+	private static final int MAX_TOTAL_ORDERINGS = 100000; // Limit to prevent memory explosion
+	
 	private void generateCrossProduct(int depth, List<Point> current_points) {
+        // Stop if we've generated enough orderings
+        if (this.valid_orderings.size() >= MAX_TOTAL_ORDERINGS) {
+        		return;
+        }
+        
         if (depth == this.disjoint_clusters.size()) {
 	        	List<Point> ordering = new ArrayList<Point>();
 	        	ordering.addAll(current_points);
@@ -178,6 +188,9 @@ class Rider {
         }
 
         for (List<Point> permutation: this.disjoint_clusters.get(depth).getOrderings()) {
+	        	if (this.valid_orderings.size() >= MAX_TOTAL_ORDERINGS) {
+	        		return;
+	        	}
 	        
 	        	current_points.addAll(permutation);
             generateCrossProduct(depth + 1, current_points);
@@ -189,6 +202,25 @@ class Rider {
         }
 
 		
+	}
+	
+	/**
+	 * Compute the current vehicle load based on picked-but-not-delivered items
+	 */
+	private int computeCurrentLoad(List<Point> points) {
+		Map<Integer, Integer> pickedItems = new HashMap<Integer, Integer>();
+		for (Point p : points) {
+			if ("Source".equals(p.getType())) {
+				pickedItems.put(p.getID(), p.getServiceObject().getServiceQuantity());
+			} else if ("Destination".equals(p.getType())) {
+				pickedItems.remove(p.getID());
+			}
+		}
+		int totalLoad = 0;
+		for (int qty : pickedItems.values()) {
+			totalLoad += qty;
+		}
+		return totalLoad;
 	}
 
 	/**

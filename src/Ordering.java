@@ -92,7 +92,7 @@ class Ordering implements RoutePlan {
 		int current_load = 0;
 		processed_requests=0;
 		for(Point point: this.valid_order) {
-			if(point.getType()=="Source") {
+			if("Source".equals(point.getType())) {
 				int loading_cost = point.getServiceObject().getServiceQuantity();
 				lu_cost += loading_cost;
 				current_status.put(point.getID(), loading_cost);
@@ -100,7 +100,7 @@ class Ordering implements RoutePlan {
 				
 				this.processed_requests+=point.getServiceObject().getServiceQuantity();//computing service processed
 			}
-			else if(point.getType()=="Destination") {
+			else if("Destination".equals(point.getType())) {
 				int unloading_cost = point.getServiceObject().getServiceQuantity();
 				lu_cost += unloading_cost;
 				current_status.remove(point.getID());
@@ -284,10 +284,38 @@ class Ordering implements RoutePlan {
 	
 	//for time-window checking
 	public boolean validateAndPrunePoints() {
-		while(this.valid_order.size()>2 && this.travel_time+start_time <= end_time){
-			prunePoint(this.valid_order);
+		// Check each point's time window using precomputed segment travel times
+		boolean doPruning = true;
+		while(this.valid_order.size()>2 && doPruning){
+			double current_time = start_time;
+			doPruning = false;
+			int violationIndex = -1;
+			
+			for(int index=1; index<this.valid_order.size()-1; index++) {
+				// Get travel time from previous point using segmentList
+				Path segment = this.segmentList.get(index);
+				if(segment != null) {
+					current_time += segment.getTravelTime();
+				}
+				
+				Point currentPoint = this.valid_order.get(index);
+				if(current_time <= currentPoint.getTimeWindow().getEndTime()) {
+					// Arrived within time window - wait if necessary
+					if(current_time < currentPoint.getTimeWindow().getStartTime()) {
+						current_time = currentPoint.getTimeWindow().getStartTime();
+					}
+				}
+				else {
+					// Arrived too late - need to prune
+					doPruning = true;
+					violationIndex = index;
+					break;
+				}
+			}
+			if(doPruning && violationIndex > 0)
+				prunePoint(this.valid_order.subList(0, violationIndex+2));
 		}
-		if(this.valid_order.size()==0)
+		if(this.valid_order.size()<=2)
 			return false;
 		return true;
 	}
@@ -341,7 +369,7 @@ class Ordering implements RoutePlan {
 	public int computeLowerBoundLUCost() {
 		int current_load = 0;
 		for(Point point: this.valid_order) {
-			if(point.getType()=="Source") {
+			if("Source".equals(point.getType())) {
 				int loading_cost = point.getServiceObject().getServiceQuantity();
 				current_load += loading_cost;
 			}

@@ -1,0 +1,29 @@
+{
+  "network_25pct": {
+    "percentage": 0.25,
+    "num_nodes": 71262,
+    "num_queries": 0,
+    "algorithms": {
+      "OptLoad": [],
+      "Insertion": []
+    }
+  },
+  "network_50pct": {
+    "percentage": 0.5,
+    "num_nodes": 142525,
+    "num_queries": 0,
+    "algorithms": {
+      "OptLoad": [],
+      "Insertion": []
+    }
+  },
+  "network_100pct": {
+    "percentage": 1.0,
+    "num_nodes": 285050,
+    "num_queries": 0,
+    "algorithms": {
+      "OptLoad": [],
+      "Insertion": []
+    }
+  }
+}

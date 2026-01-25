@@ -1,0 +1,160 @@
+{
+  "query_id": 39,
+  "depot_node": 98698,
+  "capacity": 10,
+  "seed": 421039,
+  "n_requests": 10,
+  "tour_length": 556,
+  "services": [
+    {
+      "pickup_node": 49385,
+      "delivery_node": 94528,
+      "pickup_window": [
+        546,
+        579
+      ],
+      "delivery_window": [
+        636,
+        658
+      ],
+      "demand": 1,
+      "pickup_tour_index": 121,
+      "delivery_tour_index": 525
+    },
+    {
+      "pickup_node": 52768,
+      "delivery_node": 98671,
+      "pickup_window": [
+        540,
+        575
+      ],
+      "delivery_window": [
+        631,
+        663
+      ],
+      "demand": 2,
+      "pickup_tour_index": 86,
+      "delivery_tour_index": 549
+    },
+    {
+      "pickup_node": 47693,
+      "delivery_node": 29456,
+      "pickup_window": [
+        559,
+        586
+      ],
+      "delivery_window": [
+        587,
+        599
+      ],
+      "demand": 5,
+      "pickup_tour_index": 171,
+      "delivery_tour_index": 225
+    },
+    {
+      "pickup_node": 47695,
+      "delivery_node": 98699,
+      "pickup_window": [
+        561,
+        585
+      ],
+      "delivery_window": [
+        633,
+        661
+      ],
+      "demand": 4,
+      "pickup_tour_index": 173,
+      "delivery_tour_index": 554
+    },
+    {
+      "pickup_node": 29453,
+      "delivery_node": 48921,
+      "pickup_window": [
+        567,
+        599
+      ],
+      "delivery_window": [
+        627,
+        667
+      ],
+      "demand": 4,
+      "pickup_tour_index": 222,
+      "delivery_tour_index": 415
+    },
+    {
+      "pickup_node": 29152,
+      "delivery_node": 28954,
+      "pickup_window": [
+        573,
+        606
+      ],
+      "delivery_window": [
+        635,
+        658
+      ],
+      "demand": 1,
+      "pickup_tour_index": 255,
+      "delivery_tour_index": 283
+    },
+    {
+      "pickup_node": 49385,
+      "delivery_node": 52717,
+      "pickup_window": [
+        545,
+        581
+      ],
+      "delivery_window": [
+        631,
+        662
+      ],
+      "demand": 5,
+      "pickup_tour_index": 121,
+      "delivery_tour_index": 480
+    },
+    {
+      "pickup_node": 29151,
+      "delivery_node": 49195,
+      "pickup_window": [
+        582,
+        598
+      ],
+      "delivery_window": [
+        629,
+        665
+      ],
+      "demand": 2,
+      "pickup_tour_index": 256,
+      "delivery_tour_index": 441
+    },
+    {
+      "pickup_node": 98669,
+      "delivery_node": 94525,
+      "pickup_window": [
+        540,
+        559
+      ],
+      "delivery_window": [
+        632,
+        661
+      ],
+      "demand": 3,
+      "pickup_tour_index": 19,
+      "delivery_tour_index": 528
+    },
+    {
+      "pickup_node": 94553,
+      "delivery_node": 29207,
+      "pickup_window": [
+        540,
+        573
+      ],
+      "delivery_window": [
+        574,
+        604
+      ],
+      "demand": 4,
+      "pickup_tour_index": 63,
+      "delivery_tour_index": 231
+    }
+  ]
+}
