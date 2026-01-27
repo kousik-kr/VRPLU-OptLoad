@@ -16,7 +16,15 @@ class GenerateTDGraph {
 	private static int density= 20;	
 	private static final int MAX_SPEED = 55;//mile per hour
         private static final int MIN_SPEED = 40;
-        private static final int n = 285050;
+        private static int n = 285050;  // Default to London, but can be overridden
+
+        /**
+         * Set the vertex count for the dataset to be loaded.
+         * Call this before driver() to load a different dataset.
+         */
+        public static void setNodeCount(int nodeCount) {
+                n = nodeCount;
+        }
 
         public static void driver(String directory) throws NumberFormatException, IOException {
                 /*TimeWindow rush1 = new TimeWindow(7*60+30, 9*60+30);

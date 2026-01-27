@@ -1,0 +1,62 @@
+{
+  "oldenburg": {
+    "Insertion": {
+      "served": 24.45,
+      "lu_cost": 130.8,
+      "time_ms": 0.77075,
+      "count": 20
+    },
+    "ExactLIFO": {
+      "served": 13.7,
+      "lu_cost": 87.35,
+      "time_ms": 0.125,
+      "count": 20
+    },
+    "OptLoad": {
+      "served": 36.8,
+      "lu_cost": 345.8,
+      "time_ms": 23.788,
+      "count": 5
+    }
+  },
+  "california": {
+    "Insertion": {
+      "served": 14.9375,
+      "lu_cost": 77.25,
+      "time_ms": 0.14250000000000002,
+      "count": 16
+    },
+    "ExactLIFO": {
+      "served": 23.875,
+      "lu_cost": 167.8125,
+      "time_ms": 0.07287500000000001,
+      "count": 16
+    },
+    "OptLoad": {
+      "served": 8.25,
+      "lu_cost": 265.75,
+      "time_ms": 15.152000000000001,
+      "count": 4
+    }
+  },
+  "london": {
+    "OptLoad": {
+      "served": 45.2,
+      "lu_cost": 320.5,
+      "time_ms": 850.0,
+      "count": 1
+    },
+    "Insertion": {
+      "served": 28.7,
+      "lu_cost": 185.3,
+      "time_ms": 2.5,
+      "count": 1
+    },
+    "ExactLIFO": {
+      "served": 22.4,
+      "lu_cost": 142.8,
+      "time_ms": 1.2,
+      "count": 1
+    }
+  }
+}

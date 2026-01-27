@@ -1,0 +1,102 @@
+[
+  {
+    "dataset": "oldenburg",
+    "algorithm": "optload",
+    "query_file": "query_1.txt",
+    "metrics": {
+      "served_requests": 54,
+      "lu_cost": 545.0,
+      "time_ms": 10.512
+    }
+  },
+  {
+    "dataset": "oldenburg",
+    "algorithm": "optload",
+    "query_file": "query_10.txt",
+    "metrics": {
+      "served_requests": 35,
+      "lu_cost": 220.0,
+      "time_ms": 20.095
+    }
+  },
+  {
+    "dataset": "oldenburg",
+    "algorithm": "optload",
+    "query_file": "query_11.txt",
+    "metrics": {
+      "served_requests": 6,
+      "lu_cost": -179.0,
+      "time_ms": 41.951
+    }
+  },
+  {
+    "dataset": "oldenburg",
+    "algorithm": "optload",
+    "query_file": "query_12.txt",
+    "metrics": {
+      "served_requests": 55,
+      "lu_cost": 618.0,
+      "time_ms": 10.946
+    }
+  },
+  {
+    "dataset": "oldenburg",
+    "algorithm": "optload",
+    "query_file": "query_13.txt",
+    "metrics": {
+      "served_requests": 34,
+      "lu_cost": 167.0,
+      "time_ms": 35.436
+    }
+  },
+  {
+    "dataset": "california",
+    "algorithm": "optload",
+    "query_file": "query_1.txt",
+    "metrics": {
+      "served_requests": 8,
+      "lu_cost": -365.0,
+      "time_ms": 17.576
+    }
+  },
+  {
+    "dataset": "california",
+    "algorithm": "optload",
+    "query_file": "query_10.txt",
+    "metrics": {
+      "served_requests": 9,
+      "lu_cost": -376.0,
+      "time_ms": 15.118
+    }
+  },
+  {
+    "dataset": "california",
+    "algorithm": "optload",
+    "query_file": "query_11.txt",
+    "metrics": {
+      "served_requests": 0,
+      "lu_cost": 0.0,
+      "time_ms": 0.979
+    }
+  },
+  {
+    "dataset": "california",
+    "algorithm": "optload",
+    "query_file": "query_12.txt",
+    "metrics": {
+      "served_requests": 11,
+      "lu_cost": -86.0,
+      "time_ms": 12.797
+    }
+  },
+  {
+    "dataset": "california",
+    "algorithm": "optload",
+    "query_file": "query_13.txt",
+    "metrics": {
+      "served_requests": 5,
+      "lu_cost": -236.0,
+      "time_ms": 15.117
+    }
+  }
+]

@@ -472,6 +472,14 @@ class Cluster {
                                         used[i] = false;
                                 }
                                 else if (!both.contains(p.getID())) {
+                                        // Source is in a different (previous) cluster - verify it was picked up
+                                        // Check if the source for this destination was picked up in a previous cluster
+                                        if (currentStackBeforeModification == null || 
+                                            !currentStackBeforeModification.containsKey(p.getID())) {
+                                                // S-D constraint violated: destination without its source being picked up
+                                                continue;
+                                        }
+                                        
                                         used[i] = true;
                                         current.add(p);
 

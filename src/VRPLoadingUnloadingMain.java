@@ -37,9 +37,11 @@ public class VRPLoadingUnloadingMain {
 
         private static String currentDirectory = System.getProperty("user.dir");
         private static SolverType solverType = SolverType.DEFAULT_CLUSTERING;
+        private static int nodeCount = 285050;  // Default to London
 
         public static void main(String[] args) throws IOException {
                 parseArguments(args);
+                GenerateTDGraph.setNodeCount(nodeCount);
                 System.out.println("Starting time-dependent graph generation from directory: " + currentDirectory);
                 GenerateTDGraph.driver(currentDirectory);
                 System.out.println("Graph generation complete. Beginning query ingestion.");
@@ -50,18 +52,45 @@ public class VRPLoadingUnloadingMain {
 
         /**
          * Parse command-line arguments to determine working directory and solver selection.
-         * The first argument, if present, is treated as the working directory. Subsequent
-         * arguments are interpreted as solver flags; unknown flags fall back to the default
-         * clustering heuristic.
+         * Arguments can include solver flags (--cluster, --insertion, etc.), node count (--nodes=N),
+         * or a query file path.
          */
         private static void parseArguments(String[] args) {
-                if (args.length > 0 && new File(args[0]).exists()) {
-                        currentDirectory = args[0];
+                for (int i = 0; i < args.length; i++) {
+                        if (args[i].startsWith("--nodes=")) {
+                                nodeCount = Integer.parseInt(args[i].substring(8));
+                                System.out.println("Using node count: " + nodeCount);
+                        } else if (args[i].startsWith("--")) {
+                                solverType = SolverType.fromArg(args[i]);
+                                System.out.println(SolverFactory.describeSolver(solverType));
+                        } else if (new File(args[i]).exists()) {
+                                // If it's a directory, use it as working directory
+                                File f = new File(args[i]);
+                                if (f.isDirectory()) {
+                                        currentDirectory = args[i];
+                                } else {
+                                        // It's a query file - copy it to the expected location
+                                        copyQueryFile(args[i]);
+                                }
+                        }
                 }
-
-                for (int i = 1; i < args.length; i++) {
-                        solverType = SolverType.fromArg(args[i]);
-                        System.out.println(SolverFactory.describeSolver(solverType));
+        }
+        
+        /**
+         * Copy a query file to the expected Query_N.txt location.
+         */
+        private static void copyQueryFile(String sourcePath) {
+                try {
+                        File source = new File(sourcePath);
+                        String destPath = currentDirectory + "/" + QUERY_FILE_PREFIX + nodeCount + ".txt";
+                        File dest = new File(destPath);
+                        
+                        // Read source and write to destination
+                        java.nio.file.Files.copy(source.toPath(), dest.toPath(), 
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        System.out.println("Copied query file: " + sourcePath + " -> " + destPath);
+                } catch (IOException e) {
+                        System.err.println("Warning: Could not copy query file: " + e.getMessage());
                 }
         }
 

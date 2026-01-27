@@ -412,7 +412,9 @@ class Ordering implements RoutePlan {
         }
 
         if (worstIndex != -1) {
-        		updateDetails(worstIndex,pathToReplace);
+        		updateDetails(worstIndex, pathToReplace);
+        		// S-D constraint: When pruning one point, also remove its pair
+        		removePairForSD(worstID);
         } 
         else {
         		System.out.println("Error Occured");
@@ -420,6 +422,35 @@ class Ordering implements RoutePlan {
         }
         
         // Note: removePair(worstID) removed - updateDetails() already removes the point from valid_order
+    }
+    
+    /**
+     * S-D constraint enforcement: When we prune a Source or Destination,
+     * we must also remove its paired point to maintain the S-D constraint.
+     */
+    private void removePairForSD(int serviceID) {
+        // Find if there's another point with the same service ID (the pair)
+        int pairIndex = -1;
+        for (int i = 1; i < this.valid_order.size() - 1; i++) {
+            if (this.valid_order.get(i).getID() == serviceID) {
+                pairIndex = i;
+                break;
+            }
+        }
+        
+        if (pairIndex != -1) {
+            // Found the pair - need to remove it too
+            Point prev = this.valid_order.get(pairIndex - 1);
+            Point next = this.valid_order.get(pairIndex + 1);
+            
+            List<Point> without_list = new ArrayList<Point>();
+            without_list.add(prev);
+            without_list.add(next);
+            Ordering without = new Ordering(without_list, start_time, end_time);
+            
+            Path pathToReplace = new Path(without.getPath(), without.getDistance(), without.getTravelTime());
+            updateDetails(pairIndex, pathToReplace);
+        }
     }
 
 	private void updateDetails(int worstIndex, Path pathToReplace) {
