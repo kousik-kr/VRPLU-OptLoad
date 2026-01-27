@@ -1,0 +1,9 @@
+{
+  "plots_generated": [
+    "pareto_lu_vs_served_n20.png",
+    "pareto_lu_vs_served_n40.png",
+    "pareto_quality_time_tradeoff.png",
+    "pareto_combined_n20.png"
+  ],
+  "analysis": "Pareto dominance analysis completed"
+}
