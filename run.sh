@@ -1,6 +1,19 @@
 #!/bin/bash
-# Usage: ./run.sh [path-to-ortools-jar] [path-to-ortools-native-dir] [other args...]
-# Example: ./run.sh /opt/ortools/lib/java/ortools.jar /opt/ortools/lib/ myArg1
+# Usage: ./run.sh [solver-flag] [--nodes=N]
+#
+# Solver flags:
+#   --cluster       Default OptLoad (clustering + LU pruning)
+#   --nocluster     Ablation: OptLoad without clustering
+#   --nolupruning   Ablation: OptLoad without LU pruning
+#   --exact         Exact solver
+#   --foodmatch     FoodMatch-inspired solver
+#   --lifostack     LIFO stack solver
+#   --insertion     Greedy insertion solver
+#   --bazelmans     Bazelmans baseline solver
+#
+# Example: ./run.sh --cluster
+#          ./run.sh --nocluster --nodes=6105
+#          ./run.sh --nolupruning
 
 set -euo pipefail
 

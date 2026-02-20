@@ -29,6 +29,10 @@ class SolverFactory {
                 return () -> new LinkedList<RoutePlan>(new InsertionHeuristicSolver(query).solve());
             case BAZELMANS:
                 return () -> new LinkedList<RoutePlan>(new BazelmansBaselineSolver(query).solve());
+            case OPTLOAD_NO_CLUSTER:
+                return () -> new LinkedList<RoutePlan>(new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE, false, true).getFinalOrders());
+            case OPTLOAD_NO_LU_PRUNING:
+                return () -> new LinkedList<RoutePlan>(new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE, true, false).getFinalOrders());
             case DEFAULT_CLUSTERING:
             default:
                 return () -> new LinkedList<RoutePlan>(new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE).getFinalOrders());
@@ -57,6 +61,10 @@ class SolverFactory {
                 return "Running greedy insertion VRP-LU heuristic as requested.";
             case BAZELMANS:
                 return "Running Bazelmans et al. pickup-delivery-loading baseline as requested.";
+            case OPTLOAD_NO_CLUSTER:
+                return "Running OptLoad ablation: clustering DISABLED, LU pruning enabled.";
+            case OPTLOAD_NO_LU_PRUNING:
+                return "Running OptLoad ablation: clustering enabled, LU pruning DISABLED.";
             default:
                 return "Running default clustering-based heuristic solver.";
         }

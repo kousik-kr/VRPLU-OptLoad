@@ -26,7 +26,15 @@ class Rider {
 	private double seed_distance = 0.0;
 	private int lower_bound_lu_cost = 0;
 	
+	// Ablation study flags
+	private boolean clusteringEnabled = true;
+	private boolean luPruningEnabled = true;
+	
 	public Rider (Query query, int m) {
+		this(query, m, true, true);
+	}
+	
+	public Rider (Query query, int m, boolean clusteringEnabled, boolean luPruningEnabled) {
 		this.QUERY_END_TIME = query.getQueryEndTime();
 		this.QUERY_START_TIME = query.getQueryStartTime();
 		this.max_size = m;
@@ -35,6 +43,8 @@ class Rider {
 		this.service_requests = new HashMap<Integer, Service>();
 		this.service_requests.putAll(query.getServices());
 		this.query_id = query.getID();
+		this.clusteringEnabled = clusteringEnabled;
+		this.luPruningEnabled = luPruningEnabled;
 		this.disjoint_clusters = new ArrayList<Cluster>();
 		this.valid_orderings = new ArrayList<List<Point>>();
 		driver();
@@ -79,7 +89,17 @@ class Rider {
 		computeSeedValues(sorted_list);
 		// Identify disjoint temporal clusters using sweep line algorithm
 		
-		sweepLine(sorted_list);
+		if (this.clusteringEnabled) {
+			sweepLine(sorted_list);
+		} else {
+			// Ablation: no clustering — put all points into a single cluster
+			System.out.println("[ABLATION] Clustering DISABLED: all " + sorted_list.size() + " points in one cluster");
+			Cluster singleCluster = new Cluster();
+			for (Point p : sorted_list) {
+				singleCluster.addPoint(p);
+			}
+			disjoint_clusters.add(singleCluster);
+		}
 		findValidOrdernings();
 		
 		computeFinalOrder();
@@ -91,6 +111,12 @@ class Rider {
 		Map<Integer,Boolean> prunedOnCapacity = new HashMap<Integer,Boolean>();
 		Map<Integer,Point> currentStack = new LinkedHashMap<Integer,Point>();
 		int seedLuCostDiff = this.seed_lu_cost - this.lower_bound_lu_cost;
+		
+		// When LU pruning is disabled (ablation), use MAX_VALUE so the condition is always true
+		if (!this.luPruningEnabled) {
+			seedLuCostDiff = Integer.MAX_VALUE;
+			System.out.println("[ABLATION] LU pruning DISABLED: seedLuCostDifference set to MAX_VALUE");
+		}
 		//int current_consumption = 0;
 		// Walk each temporal cluster independently and compute feasible permutations
 		// while progressively tracking vehicle capacity already consumed.

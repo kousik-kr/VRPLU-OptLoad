@@ -7,6 +7,8 @@ enum SolverType {
     LIFO_STACK("--lifostack", "OutputLifo_"),
     INSERTION("--insertion", "OutputInsertion_"),
     BAZELMANS("--bazelmans", "OutputBazelmans_"),
+    OPTLOAD_NO_CLUSTER("--nocluster", "OutputNoCluster_"),
+    OPTLOAD_NO_LU_PRUNING("--nolupruning", "OutputNoLUPruning_"),
     DEFAULT_CLUSTERING("--cluster", "Output_");
 
     private final String flag;
