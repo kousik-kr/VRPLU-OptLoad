@@ -71,9 +71,7 @@ public class FoodMatchSolver {
         double currentTime = query.getQueryStartTime();
         Point currentPoint = query.getDepot();
         int currentLoad = 0;
-        double totalDistance = 0;
-        int luCost = 0;
-        int completedQuantity = 0;
+        int servedCount = 0;
 
         while (!allDelivered()) {
             MoveCandidate best = selectNextMove(currentPoint, currentTime, currentLoad);
@@ -84,35 +82,40 @@ public class FoodMatchSolver {
             ServiceState state = serviceStates.get(best.serviceId);
             int quantity = state.service.getServiceQuantity();
 
-            totalDistance += best.leg.distance;
             currentTime = Math.max(best.leg.arrivalTime, best.target.getTimeWindow().getStartTime());
             route.add(best.target);
 
             if (best.pickup) {
                 state.picked = true;
                 currentLoad += quantity;
-                luCost += quantity; // loading cost
             } else {
                 state.delivered = true;
                 currentLoad -= quantity;
-                luCost += quantity + 2 * Math.max(0, currentLoad); // unloading with rearrangement penalty
-                completedQuantity += quantity;
+                servedCount++;
             }
 
             currentPoint = best.target;
         }
 
+        // Return to depot
         LegResult legToDepot = shortestLeg(currentPoint.getNode().getNodeID(), query.getDepot().getNode().getNodeID(),
                 currentTime);
         if (legToDepot != null) {
-            currentTime = Math.max(legToDepot.arrivalTime, query.getDepot().getTimeWindow().getStartTime());
-            totalDistance += legToDepot.distance;
             route.add(query.getDepot());
         }
 
+        // Compute LU cost and distance only for the final route
+        double totalDistance = computeTotalDistance(route);
+        int luCost = computeLUCost(route);
+        int processedQuantity = computeProcessedQuantity(route);
+        int totalRequests = serviceStates.size();
+
         List<RoutePlan> result = new ArrayList<>();
-        result.add(new ExactSolution(route, completedQuantity, luCost, totalDistance));
-        System.out.println("Finished FoodMatch solver for query " + query.getID());
+        result.add(new ExactSolution(route, processedQuantity, luCost, totalDistance));
+        System.out.println("  Finished: served " + servedCount + "/" + totalRequests
+                + " requests (" + processedQuantity + " items)"
+                + ", Distance: " + String.format("%.2f", totalDistance)
+                + ", LU cost: " + luCost);
         return result;
     }
 
@@ -165,6 +168,55 @@ public class FoodMatchSolver {
         double score = leg.distance + 0.5 * wait - 0.05 * quantity + Math.max(0, -slack);
 
         candidates.add(new MoveCandidate(serviceId, target, pickup, leg, score));
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Post-hoc metrics (computed once on the final route)                //
+    // ------------------------------------------------------------------ //
+
+    private double computeTotalDistance(List<Point> route) {
+        double total = 0.0;
+        double time = query.getQueryStartTime();
+        for (int i = 1; i < route.size(); i++) {
+            LegResult leg = shortestLeg(
+                    route.get(i - 1).getNode().getNodeID(),
+                    route.get(i).getNode().getNodeID(),
+                    time);
+            if (leg != null) {
+                total += leg.distance;
+                time = Math.max(leg.arrivalTime,
+                        route.get(i).getTimeWindow().getStartTime());
+            }
+        }
+        return total;
+    }
+
+    private int computeLUCost(List<Point> route) {
+        int luCost = 0;
+        int currentLoad = 0;
+        for (Point point : route) {
+            if ("Source".equals(point.getType())) {
+                int qty = point.getServiceObject().getServiceQuantity();
+                currentLoad += qty;
+                luCost += qty;
+            } else if ("Destination".equals(point.getType())) {
+                int qty = point.getServiceObject().getServiceQuantity();
+                currentLoad -= qty;
+                luCost += qty;
+                luCost += 2 * currentLoad;
+            }
+        }
+        return luCost;
+    }
+
+    private int computeProcessedQuantity(List<Point> route) {
+        int total = 0;
+        for (Point point : route) {
+            if ("Source".equals(point.getType())) {
+                total += point.getServiceObject().getServiceQuantity();
+            }
+        }
+        return total;
     }
 
     private boolean allDelivered() {

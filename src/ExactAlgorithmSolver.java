@@ -10,16 +10,39 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 /**
- * Exact OptLoad solver based on the branch-and-bound scheme from
- * "An Exact Algorithm for the Vehicle Routing Problem with Loading and
- * Unloading Constraints" (NET 32:3, 2024). The solver enumerates feasible
- * pickup and delivery orders while maintaining precedence, vehicle capacity,
- * and time-window feasibility. A multi-stage lower bound (nearest connection +
- * Euclidean MST + return to depot) aggressively prunes dominated partial tours
- * so only states that can still improve the incumbent are explored.
+ * Exact solver that enumerates <em>all</em> feasible routes and returns the
+ * Pareto-non-dominated front across three objectives:
+ * <ol>
+ *   <li><b>Maximise</b> served requests (total quantity delivered).</li>
+ *   <li><b>Minimise</b> LU (loading/unloading) cost.</li>
+ *   <li><b>Minimise</b> travel distance.</li>
+ * </ol>
+ *
+ * <h3>Enumeration strategy</h3>
+ * <ol>
+ *   <li>Generate every <b>combination</b> (subset) of the service requests
+ *       (2^N subsets for N requests).</li>
+ *   <li>For each combination generate every <b>permutation</b> of the
+ *       service points (source + destination) that respects the
+ *       <em>source-before-destination</em> constraint.</li>
+ *   <li>For every such candidate route (depot → permutation → depot) check
+ *       <b>time-window</b> and <b>capacity</b> feasibility while
+ *       computing the actual travel distance.</li>
+ *   <li>For every feasible route compute the <b>LU cost</b>.</li>
+ *   <li>Collect all feasible solutions and extract the Pareto front.</li>
+ * </ol>
+ *
+ * <p><b>Complexity warning:</b> the number of candidates grows
+ * super-exponentially, so this solver is practical only for small N
+ * (≈ 8–10 services). Progress is logged every 5 seconds.
  */
 public class ExactAlgorithmSolver {
 
+    // ------------------------------------------------------------------ //
+    //  Internal helpers                                                    //
+    // ------------------------------------------------------------------ //
+
+    /** Result of an A* shortest-path computation between two nodes. */
     private static class LegResult {
         final double distance;
         final double arrivalTime;
@@ -31,281 +54,387 @@ public class ExactAlgorithmSolver {
     }
 
     private final Query query;
+    private final Point depot;
+
+    /** Indexed arrays – index i corresponds to service ID (i+1). */
+    private final List<Integer> serviceIds;
     private final List<Point> pickups;
     private final List<Point> deliveries;
     private final List<Integer> quantities;
-    private final Point depot;
 
-    private ExactSolution bestSolution;
+    /** All feasible solutions found during enumeration. */
+    private final List<ExactSolution> feasibleSolutions = new ArrayList<>();
+
+    /** Progress counters. */
+    private long permutationsEvaluated = 0;
+    private long feasibleCount = 0;
+    private long lastReportTime = 0;
+
+    // ------------------------------------------------------------------ //
+    //  Construction                                                       //
+    // ------------------------------------------------------------------ //
 
     public ExactAlgorithmSolver(Query query) {
         this.query = query;
+        this.depot = query.getDepot();
+        this.serviceIds = new ArrayList<>();
         this.pickups = new ArrayList<>();
         this.deliveries = new ArrayList<>();
         this.quantities = new ArrayList<>();
-        this.depot = query.getDepot();
         extractRequests();
     }
 
     private void extractRequests() {
         for (Entry<Integer, Service> entry : query.getServices().entrySet()) {
             Service service = entry.getValue();
-            this.pickups.add(service.getStartPoint());
-            this.deliveries.add(service.getEndPoint());
-            this.quantities.add(service.getServiceQuantity());
+            serviceIds.add(entry.getKey());
+            pickups.add(service.getStartPoint());
+            deliveries.add(service.getEndPoint());
+            quantities.add(service.getServiceQuantity());
         }
     }
+
+    // ------------------------------------------------------------------ //
+    //  Main entry point                                                   //
+    // ------------------------------------------------------------------ //
 
     public List<ExactSolution> solve() {
-        System.out.println("Starting OptLoad exact solver for query " + query.getID());
-        System.out.println("  Services: " + pickups.size() + ", Capacity: " + query.getCapacity() + ", Time window: [" + query.getQueryStartTime() + ", " + query.getQueryEndTime() + "]");
-        
-        boolean[] picked = new boolean[pickups.size()];
-        boolean[] delivered = new boolean[pickups.size()];
-
-        List<Point> route = new ArrayList<>();
-        route.add(depot);
+        int n = pickups.size();
+        System.out.println("Starting exact solver for query " + query.getID());
+        System.out.println("  Services: " + n + ", Capacity: " + query.getCapacity()
+                + ", Time window: [" + query.getQueryStartTime()
+                + ", " + query.getQueryEndTime() + "]");
+        System.out.println("  Total subsets to enumerate: " + (1L << n));
 
         long startTime = System.currentTimeMillis();
-        explore(depot, query.getQueryStartTime(), 0, 0, 0, 0, picked, delivered, route);
+        lastReportTime = startTime;
+
+        // --- Phase 1: enumerate all combinations (subsets) of services ---
+        // Iterate over every non-empty subset using a bitmask.
+        for (int mask = 1; mask < (1 << n); mask++) {
+            List<Integer> subset = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                if ((mask & (1 << i)) != 0) {
+                    subset.add(i);
+                }
+            }
+
+            // --- Phase 2: for this subset generate all valid permutations ---
+            //     and evaluate feasibility.
+            List<Point> current = new ArrayList<>();
+            boolean[] placed = new boolean[2 * subset.size()]; // tracks placed positions
+            generatePermutations(subset, current, new HashSet<Integer>(), placed);
+
+            // Progress logging
+            long now = System.currentTimeMillis();
+            if (now - lastReportTime > 5000) {
+                lastReportTime = now;
+                System.out.println("    Subsets processed: " + mask + "/" + ((1 << n) - 1)
+                        + ", permutations evaluated: " + permutationsEvaluated
+                        + ", feasible: " + feasibleCount);
+            }
+        }
+
         long elapsed = System.currentTimeMillis() - startTime;
 
-        if (bestSolution == null) {
-            System.out.println("  No feasible solution found after " + elapsed + " ms");
-            return Collections.emptyList();
+        System.out.println("  Enumeration complete in " + elapsed + " ms");
+        System.out.println("    Permutations evaluated: " + permutationsEvaluated
+                + ", feasible routes: " + feasibleCount);
+
+        // --- Phase 3: extract Pareto-non-dominated front ---
+        List<ExactSolution> paretoFront = extractParetoFront(feasibleSolutions);
+
+        if (paretoFront.isEmpty()) {
+            System.out.println("  No feasible solution found.");
+        } else {
+            System.out.println("  Pareto front size: " + paretoFront.size());
+            for (int i = 0; i < paretoFront.size(); i++) {
+                ExactSolution s = paretoFront.get(i);
+                System.out.println("    [" + (i + 1) + "] served: "
+                        + s.getNumberofProcessedRequests()
+                        + ", LU cost: " + s.getLUCost()
+                        + ", distance: " + String.format("%.2f", s.getDistance()));
+            }
         }
 
-        System.out.println("  Found solution: " + bestSolution.getNumberofProcessedRequests() + " requests, LU cost: " + bestSolution.getLUCost() + ", Distance: " + String.format("%.2f", bestSolution.getDistance()) + " (" + elapsed + " ms)");
-        return Collections.singletonList(bestSolution);
+        return paretoFront;
     }
 
-    private static long explorationCount = 0;
-    private static long lastReportTime = 0;
-    
-    private void explore(Point currentPoint, double currentTime, double distance, int luCost, int load,
-            int completedQuantity, boolean[] picked, boolean[] delivered, List<Point> route) {
+    // ------------------------------------------------------------------ //
+    //  Permutation generation with source-before-destination constraint   //
+    // ------------------------------------------------------------------ //
 
-        explorationCount++;
-        long currentMillis = System.currentTimeMillis();
-        if (currentMillis - lastReportTime > 5000) {  // Report every 5 seconds
-            lastReportTime = currentMillis;
-            System.out.println("    Explored " + explorationCount + " states, current best: " + 
-                             (bestSolution != null ? bestSolution.getNumberofProcessedRequests() + " requests" : "none"));
-        }
-        
-        // Check if we can return to depot and update best solution (for both complete and partial solutions)
-        // Only save solution if we've actually delivered something (completedQuantity > 0)
-        if (load == 0 && completedQuantity > 0) {  // Truck is empty and we've completed some deliveries
-            LegResult backLeg = shortestLeg(currentPoint.getNode().getNodeID(), depot.getNode().getNodeID(), currentTime);
-            if (backLeg != null) {
-                double arrivalAtDepot = Math.max(backLeg.arrivalTime, depot.getTimeWindow().getStartTime());
-                if (arrivalAtDepot <= query.getQueryEndTime()) {
-                    List<Point> completedRoute = new ArrayList<>(route);
-                    completedRoute.add(depot);
-                    ExactSolution solution = new ExactSolution(completedRoute, completedQuantity, luCost,
-                            distance + backLeg.distance);
-                    updateBestSolution(solution);
-                    
-                    // If all delivered, return (complete solution found)
-                    if (allDelivered(delivered)) {
-                        return;
-                    }
-                    // Otherwise, continue exploring to potentially find better partial/complete solutions
-                }
-            }
-        }
+    /**
+     * Recursively build every permutation of service points for a given
+     * subset, enforcing that each source appears before its destination.
+     *
+     * @param subset   indices (into pickups/deliveries) of services in this
+     *                 combination
+     * @param current  the partially-built sequence of points
+     * @param pickedUp set of subset-indices whose source has already been
+     *                 placed
+     * @param placed   flags for source (2*j) and dest (2*j+1) of each
+     *                 subset element j
+     */
+    private void generatePermutations(List<Integer> subset,
+                                      List<Point> current,
+                                      Set<Integer> pickedUp,
+                                      boolean[] placed) {
 
-        int remainingQuantity = remainingQuantity(delivered);
-        if (bestSolution != null && completedQuantity + remainingQuantity < bestSolution
-                .getNumberofProcessedRequests()) {
-            return; // cannot beat incumbent on served demand
-        }
-
-        double optimisticDistance = distance + lowerBoundDistance(currentPoint, picked, delivered);
-        if (bestSolution != null
-                && completedQuantity == bestSolution.getNumberofProcessedRequests()
-                && optimisticDistance >= bestSolution.getDistance()) {
-            return; // dominated by distance bound
-        }
-
-        for (int i = 0; i < pickups.size(); i++) {
-            if (!picked[i]) {
-                tryMoveToPoint(i, pickups.get(i), quantities.get(i), true, currentPoint, currentTime, distance, luCost, load,
-                        completedQuantity, picked, delivered, route);
-            }
-
-            if (picked[i] && !delivered[i]) {
-                tryMoveToPoint(i, deliveries.get(i), quantities.get(i), false, currentPoint, currentTime, distance, luCost,
-                        load, completedQuantity, picked, delivered, route);
-            }
-        }
-    }
-
-    private void tryMoveToPoint(int index, Point nextPoint, int quantity, boolean isPickup, Point currentPoint,
-            double currentTime, double distance, int luCost, int load, int completedQuantity, boolean[] picked,
-            boolean[] delivered, List<Point> route) {
-
-        LegResult leg = shortestLeg(currentPoint.getNode().getNodeID(), nextPoint.getNode().getNodeID(), currentTime);
-        if (leg == null) {
+        // When all 2*|subset| points have been placed we have a complete
+        // permutation – evaluate it.
+        if (current.size() == 2 * subset.size()) {
+            evaluateRoute(subset, current);
             return;
         }
 
-        double arrivalTime = leg.arrivalTime;
-        if (arrivalTime > nextPoint.getTimeWindow().getEndTime()) {
-            return; // time-window violation
+        for (int j = 0; j < subset.size(); j++) {
+            int idx = subset.get(j); // index into pickups/deliveries
+
+            // Try placing the SOURCE of service j (if not yet placed)
+            if (!placed[2 * j]) {
+                placed[2 * j] = true;
+                current.add(pickups.get(idx));
+                pickedUp.add(j);
+
+                generatePermutations(subset, current, pickedUp, placed);
+
+                current.remove(current.size() - 1);
+                placed[2 * j] = false;
+                pickedUp.remove(j);
+            }
+
+            // Try placing the DESTINATION of service j (only if source
+            // has already been placed – enforces source-before-dest)
+            if (pickedUp.contains(j) && !placed[2 * j + 1]) {
+                placed[2 * j + 1] = true;
+                current.add(deliveries.get(idx));
+
+                generatePermutations(subset, current, pickedUp, placed);
+
+                current.remove(current.size() - 1);
+                placed[2 * j + 1] = false;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Route evaluation (time-window + capacity feasibility)              //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Build the full route (depot → sequence → depot), check time-window
+     * and capacity constraints, and if feasible compute LU cost and
+     * distance, then store the solution.
+     */
+    private void evaluateRoute(List<Integer> subset, List<Point> sequence) {
+        permutationsEvaluated++;
+
+        double currentTime = query.getQueryStartTime();
+        double totalDistance = 0.0;
+        int currentLoad = 0;
+        int capacity = query.getCapacity();
+
+        Point prev = depot;
+
+        // Traverse depot → point_1 → point_2 → … → point_2k
+        for (Point point : sequence) {
+            LegResult leg = shortestLeg(
+                    prev.getNode().getNodeID(),
+                    point.getNode().getNodeID(),
+                    currentTime);
+            if (leg == null) {
+                return; // unreachable – infeasible
+            }
+
+            totalDistance += leg.distance;
+            currentTime = leg.arrivalTime;
+
+            // Time-window check
+            currentTime = Math.max(currentTime,
+                    point.getTimeWindow().getStartTime());
+            if (currentTime > point.getTimeWindow().getEndTime()
+                    || currentTime > query.getQueryEndTime()) {
+                return; // time-window violation
+            }
+
+            // Capacity check
+            if ("Source".equals(point.getType())) {
+                currentLoad += point.getServiceObject().getServiceQuantity();
+                if (currentLoad > capacity) {
+                    return; // capacity violation
+                }
+            } else if ("Destination".equals(point.getType())) {
+                currentLoad -= point.getServiceObject().getServiceQuantity();
+                if (currentLoad < 0) {
+                    return; // should not happen with valid permutation
+                }
+            }
+
+            prev = point;
         }
 
-        double serviceStart = Math.max(arrivalTime, nextPoint.getTimeWindow().getStartTime());
-        if (serviceStart > query.getQueryEndTime()) {
+        // Return to depot
+        LegResult backLeg = shortestLeg(
+                prev.getNode().getNodeID(),
+                depot.getNode().getNodeID(),
+                currentTime);
+        if (backLeg == null) {
             return;
         }
-
-        int newLoad = isPickup ? load + quantity : load - quantity;
-        if (newLoad < 0 || newLoad > query.getCapacity()) {
-            return; // capacity violation
+        totalDistance += backLeg.distance;
+        double depotArrival = Math.max(backLeg.arrivalTime,
+                depot.getTimeWindow().getStartTime());
+        if (depotArrival > query.getQueryEndTime()) {
+            return; // cannot return to depot in time
         }
 
-        int newLuCost = luCost + quantity;
-        int newCompletedQuantity = completedQuantity;
-        if (!isPickup) {
-            newLuCost += 2 * newLoad;
-            newCompletedQuantity += quantity;
-        }
+        // --- Route is feasible! Compute LU cost and served quantity ---
+        int luCost = computeLUCost(sequence);
+        int processedQuantity = computeProcessedQuantity(sequence);
 
-        double newDistance = distance + leg.distance;
+        List<Point> fullRoute = new ArrayList<>();
+        fullRoute.add(depot);
+        fullRoute.addAll(sequence);
+        fullRoute.add(depot);
 
-        boolean[] pickedCopy = picked.clone();
-        boolean[] deliveredCopy = delivered.clone();
-        pickedCopy[index] = pickedCopy[index] || isPickup;
-        deliveredCopy[index] = deliveredCopy[index] || !isPickup;
-
-        route.add(nextPoint);
-        explore(nextPoint, serviceStart, newDistance, newLuCost, newLoad, newCompletedQuantity, pickedCopy,
-                deliveredCopy, route);
-        route.remove(route.size() - 1);
+        feasibleSolutions.add(
+                new ExactSolution(fullRoute, processedQuantity, luCost, totalDistance));
+        feasibleCount++;
     }
 
-    private void updateBestSolution(ExactSolution candidate) {
-        if (bestSolution == null) {
-            bestSolution = candidate;
-            return;
-        }
+    // ------------------------------------------------------------------ //
+    //  LU cost and processed-quantity computation                         //
+    // ------------------------------------------------------------------ //
 
-        Comparator<ExactSolution> comparator = Comparator
-                .comparingInt(ExactSolution::getNumberofProcessedRequests).reversed()
-                .thenComparingDouble(ExactSolution::getDistance)
-                .thenComparingInt(ExactSolution::getLUCost);
-
-        if (comparator.compare(candidate, bestSolution) < 0) {
-            bestSolution = candidate;
+    /**
+     * Compute LU cost for a sequence of service points (without depot).
+     * <ul>
+     *   <li>At each <b>Source</b>: LU cost += quantity  (loading).</li>
+     *   <li>At each <b>Destination</b>: LU cost += quantity (unloading) +
+     *       2 * remaining_load (rearranging items still on the vehicle).</li>
+     * </ul>
+     */
+    private int computeLUCost(List<Point> sequence) {
+        int luCost = 0;
+        int currentLoad = 0;
+        for (Point point : sequence) {
+            if ("Source".equals(point.getType())) {
+                int qty = point.getServiceObject().getServiceQuantity();
+                currentLoad += qty;
+                luCost += qty;
+            } else if ("Destination".equals(point.getType())) {
+                int qty = point.getServiceObject().getServiceQuantity();
+                currentLoad -= qty;
+                luCost += qty;
+                luCost += 2 * currentLoad;
+            }
         }
+        return luCost;
     }
 
-    private boolean allDelivered(boolean[] delivered) {
-        for (boolean value : delivered) {
-            if (!value) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private int remainingQuantity(boolean[] delivered) {
-        int remaining = 0;
-        for (int i = 0; i < delivered.length; i++) {
-            if (!delivered[i]) {
-                remaining += quantities.get(i);
-            }
-        }
-        return remaining;
-    }
-
-    private double lowerBoundDistance(Point currentPoint, boolean[] picked, boolean[] delivered) {
-        List<Node> remainingNodes = new ArrayList<>();
-        for (int i = 0; i < pickups.size(); i++) {
-            if (!picked[i]) {
-                remainingNodes.add(pickups.get(i).getNode());
-            } else if (!delivered[i]) {
-                remainingNodes.add(deliveries.get(i).getNode());
-            }
-        }
-
-        Node currentNode = currentPoint.getNode();
-        Node depotNode = depot.getNode();
-
-        if (remainingNodes.isEmpty()) {
-            return currentNode.euclidean_distance(depotNode);
-        }
-
-        double toRemaining = Double.MAX_VALUE;
-        double toDepot = Double.MAX_VALUE;
-
-        for (Node node : remainingNodes) {
-            toRemaining = Math.min(toRemaining, currentNode.euclidean_distance(node));
-            toDepot = Math.min(toDepot, node.euclidean_distance(depotNode));
-        }
-
-        double mst = euclideanMST(remainingNodes);
-        return toRemaining + mst + toDepot;
-    }
-
-    private double euclideanMST(List<Node> nodes) {
-        if (nodes.size() <= 1) {
-            return 0.0;
-        }
-
-        Set<Integer> visited = new HashSet<>();
-        Map<Integer, Double> bestEdge = new HashMap<>();
-        PriorityQueue<Integer> queue = new PriorityQueue<>(Comparator.comparingDouble(bestEdge::get));
-
-        Node start = nodes.get(0);
-        int startId = start.getNodeID();
-        visited.add(startId);
-
-        for (Node node : nodes) {
-            if (node.getNodeID() != startId) {
-                double cost = start.euclidean_distance(node);
-                bestEdge.put(node.getNodeID(), cost);
-                queue.add(node.getNodeID());
-            }
-        }
-
-        double total = 0.0;
-        while (!queue.isEmpty()) {
-            int nextId = queue.poll();
-            if (visited.contains(nextId)) {
-                continue;
-            }
-            double edgeCost = bestEdge.get(nextId);
-            visited.add(nextId);
-            total += edgeCost;
-
-            Node nextNode = Graph.get_node(nextId);
-            for (Node node : nodes) {
-                int nodeId = node.getNodeID();
-                if (visited.contains(nodeId)) {
-                    continue;
-                }
-                double candidate = nextNode.euclidean_distance(node);
-                if (!bestEdge.containsKey(nodeId) || candidate < bestEdge.get(nodeId)) {
-                    bestEdge.put(nodeId, candidate);
-                    queue.add(nodeId);
-                }
+    /** Sum of quantities picked up (= total items processed). */
+    private int computeProcessedQuantity(List<Point> sequence) {
+        int total = 0;
+        for (Point point : sequence) {
+            if ("Source".equals(point.getType())) {
+                total += point.getServiceObject().getServiceQuantity();
             }
         }
         return total;
     }
 
+    // ------------------------------------------------------------------ //
+    //  Pareto-front extraction                                            //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Extract the set of Pareto-non-dominated solutions w.r.t.
+     * <ul>
+     *   <li>Maximise served requests  (higher is better)</li>
+     *   <li>Minimise LU cost          (lower is better)</li>
+     *   <li>Minimise distance          (lower is better)</li>
+     * </ul>
+     *
+     * A solution S1 dominates S2 iff S1 is at least as good on ALL three
+     * objectives AND strictly better on at least one.
+     */
+    private List<ExactSolution> extractParetoFront(
+            List<ExactSolution> solutions) {
+
+        List<ExactSolution> front = new ArrayList<>();
+
+        for (ExactSolution candidate : solutions) {
+            boolean dominated = false;
+            List<ExactSolution> newFront = new ArrayList<>();
+
+            for (ExactSolution existing : front) {
+                if (dominates(existing, candidate)) {
+                    dominated = true;
+                    newFront.add(existing);
+                } else if (!dominates(candidate, existing)) {
+                    // Neither dominates the other – keep existing
+                    newFront.add(existing);
+                }
+                // else: candidate dominates existing → drop existing
+            }
+
+            if (!dominated) {
+                newFront.add(candidate);
+            }
+            front = newFront;
+        }
+
+        // Sort the front for deterministic output: most served first, then
+        // lowest LU, then shortest distance.
+        front.sort(Comparator
+                .comparingInt(ExactSolution::getNumberofProcessedRequests)
+                .reversed()
+                .thenComparingInt(ExactSolution::getLUCost)
+                .thenComparingDouble(ExactSolution::getDistance));
+
+        return front;
+    }
+
+    /**
+     * Returns {@code true} iff {@code a} dominates {@code b}:
+     * a is ≥ on served, ≤ on LU, ≤ on distance, and strictly better on
+     * at least one.
+     */
+    private boolean dominates(ExactSolution a, ExactSolution b) {
+        boolean atLeastAsGood =
+                a.getNumberofProcessedRequests() >= b.getNumberofProcessedRequests()
+             && a.getLUCost() <= b.getLUCost()
+             && a.getDistance() <= b.getDistance();
+
+        boolean strictlyBetter =
+                a.getNumberofProcessedRequests() > b.getNumberofProcessedRequests()
+             || a.getLUCost() < b.getLUCost()
+             || a.getDistance() < b.getDistance();
+
+        return atLeastAsGood && strictlyBetter;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  A* shortest-path between two nodes (distance-optimal)              //
+    // ------------------------------------------------------------------ //
+
     private LegResult shortestLeg(int src, int dest, double departureTime) {
+        if (src == dest) {
+            return new LegResult(0.0, departureTime);
+        }
+
         Map<Integer, Double> gCost = new HashMap<>();
         Map<Integer, Double> arrivalTime = new HashMap<>();
         Map<Integer, Double> fScore = new HashMap<>();
 
-        PriorityQueue<Integer> queue = new PriorityQueue<>(Comparator.comparingDouble(fScore::get));
+        PriorityQueue<Integer> queue = new PriorityQueue<>(
+                Comparator.comparingDouble(fScore::get));
 
         gCost.put(src, 0.0);
         arrivalTime.put(src, departureTime);
-        fScore.put(src, Graph.get_node(src).euclidean_distance(Graph.get_node(dest)));
+        fScore.put(src, Graph.get_node(src)
+                .euclidean_distance(Graph.get_node(dest)));
         queue.add(src);
 
         while (!queue.isEmpty()) {
@@ -315,19 +444,23 @@ public class ExactAlgorithmSolver {
             }
 
             Node currentNode = Graph.get_node(current);
-            for (Entry<Integer, Edge> entry : currentNode.get_outgoing_edges().entrySet()) {
+            for (Entry<Integer, Edge> entry :
+                    currentNode.get_outgoing_edges().entrySet()) {
                 Edge edge = entry.getValue();
                 int child = edge.get_destination();
 
-                double tentativeDistance = gCost.get(current) + edge.getDistance();
-                double tentativeArrival = edge.get_arrival_time(arrivalTime.get(current));
+                double tentativeDistance =
+                        gCost.get(current) + edge.getDistance();
+                double tentativeArrival =
+                        edge.get_arrival_time(arrivalTime.get(current));
 
-                boolean betterDistance = !gCost.containsKey(child) || tentativeDistance < gCost.get(child);
-                if (betterDistance) {
+                if (!gCost.containsKey(child)
+                        || tentativeDistance < gCost.get(child)) {
                     gCost.put(child, tentativeDistance);
                     arrivalTime.put(child, tentativeArrival);
-                    double priority = tentativeDistance + Graph.get_node(child).euclidean_distance(Graph.get_node(dest));
-                    fScore.put(child, priority);
+                    fScore.put(child, tentativeDistance
+                            + Graph.get_node(child)
+                                    .euclidean_distance(Graph.get_node(dest)));
                     queue.add(child);
                 }
             }
