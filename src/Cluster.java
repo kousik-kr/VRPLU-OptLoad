@@ -14,8 +14,8 @@ class Cluster {
         List<Point> points;
         List<Integer> single;
         List<Integer> both;
-        private double start_time=0;
-        private double end_time=0;
+        private double start_time = Double.MAX_VALUE;
+        private double end_time = Double.MIN_VALUE;
         private double center;
         private List<List<Point>> valid_orderings;
         private int available_capacity;
@@ -26,28 +26,41 @@ class Cluster {
         private Map<Integer,Point> currentStackBeforeModification;
         private int seedLuCostDifference = Integer.MAX_VALUE;
 
+        // Backtracking statistics for search space analysis
+        private long prefixesExplored = 0;
+        private long prefixesPrunedByCapacity = 0;
+        private long prefixesPrunedByLUBound = 0;
+        private long prefixesPrunedBySeedLU = 0;
+        private long totalBacktrackCalls = 0;
+
         /**
          * Lightweight stack state used to maintain the unavoidable LU lower bound while
          * enumerating orderings. This mirrors the stack-depth bound described in the
          * pruning guidelines: pickups push onto the open stack, deliveries pop from it
-         * and add the number of items above the delivered request to the lower bound.
+         * and add the total quantity of items above the delivered request to the lower bound.
+         *
+         * NOTE: quantities (not mere item count) are tracked so that the bound stays
+         * comparable with the full LU cost computed by computeLuCost/computeLuCostWithPreviousStack.
          */
         private static class StackState {
-                private List<Integer> stack = new ArrayList<Integer>();
+                private List<Integer> stack = new ArrayList<Integer>();           // request IDs in stack order
+                private List<Integer> stackQty = new ArrayList<Integer>();        // parallel list: quantity per slot
                 private Map<Integer, Integer> positions = new HashMap<Integer, Integer>();
                 private int lowerBound = 0;
 
                 StackState copy() {
                         StackState copy = new StackState();
                         copy.stack = new ArrayList<Integer>(this.stack);
+                        copy.stackQty = new ArrayList<Integer>(this.stackQty);
                         copy.positions = new HashMap<Integer, Integer>(this.positions);
                         copy.lowerBound = this.lowerBound;
                         return copy;
                 }
 
-                void pickup(int requestId) {
+                void pickup(int requestId, int quantity) {
+                        positions.put(requestId, stack.size());
                         stack.add(requestId);
-                        positions.put(requestId, stack.size() - 1);
+                        stackQty.add(quantity);
                 }
 
                 void deliver(int requestId) {
@@ -56,16 +69,25 @@ class Cluster {
                                 return;
                         }
 
-                        int itemsAbove = stack.size() - 1 - position;
-                        lowerBound += itemsAbove;
+                        // Sum the quantities of all items above this one in the stack
+                        int qtyAbove = 0;
+                        for (int idx = position + 1; idx < stack.size(); idx++) {
+                                qtyAbove += stackQty.get(idx);
+                        }
+                        lowerBound += 2 * qtyAbove;
 
-                        int topRequest = stack.get(stack.size() - 1);
-                        if (position != stack.size() - 1) {
+                        // Swap-remove: move top element into the vacated position
+                        int topIdx = stack.size() - 1;
+                        if (position != topIdx) {
+                                int topRequest = stack.get(topIdx);
+                                int topQty = stackQty.get(topIdx);
                                 stack.set(position, topRequest);
+                                stackQty.set(position, topQty);
                                 positions.put(topRequest, position);
                         }
 
-                        stack.remove(stack.size() - 1);
+                        stack.remove(topIdx);
+                        stackQty.remove(topIdx);
                         positions.remove(requestId);
                 }
         }
@@ -287,22 +309,44 @@ class Cluster {
 		}
 		
 		prunedPoints.putAll(prunedSources);
-		//int current_consumption = 0;
+		
+		// Remove orphaned points: if a Source was pruned, its Destination
+		// in this cluster can never be placed (backtracking would skip it
+		// forever), and vice-versa.  Clean them up now to save work.
+		removeOrphanedPairs(prunedSources);
+		
 		for(Point point: points) {
 			if("Source".equals(point.getType())) {
-				//current_consumption += point.getServiceObject().getServiceQuantity();
 				// Add pickup point to currentStack (yet to be delivered)
 				currentStack.put(point.getID(), point);
 			}
 			else if("Destination".equals(point.getType())) {
-				//current_consumption -= point.getServiceObject().getServiceQuantity();
 				// Remove delivered point from currentStack
 				currentStack.remove(point.getID());
 			}
 		}
 		//return current_consumption;
-//		this.valid_orderings.clear();
-//		this.valid_orderings.putAll(updated_orderings);
+	}
+	
+	/**
+	 * After capacity pruning, if a Source was pruned its orphaned Destination
+	 * (or vice-versa) can never be feasibly placed. Remove such orphans from
+	 * this cluster's point list and update the single/both tracking lists.
+	 */
+	private void removeOrphanedPairs(Map<Integer,Boolean> prunedIds) {
+		if (prunedIds.isEmpty()) return;
+		
+		List<Point> orphans = new ArrayList<Point>();
+		for (Point p : this.points) {
+			if (prunedIds.containsKey(p.getID())) {
+				orphans.add(p);
+			}
+		}
+		for (Point orphan : orphans) {
+			this.points.remove(orphan);
+			this.single.remove(Integer.valueOf(orphan.getID()));
+			this.both.remove(Integer.valueOf(orphan.getID()));
+		}
 	}
 
         // private void filterOutBasedOnTimeWindows(Map<Integer,Point> currentStack, Map<Integer,Boolean> prunedPoints) {
@@ -407,13 +451,19 @@ class Cluster {
 	}
 
         private void backtrack(List<Point> current, boolean[] used, Set<Integer> sourcesAdded, List<List<Point>> valid_orderings, int currentCapacity, int bottleneckCapacity, StackState stackState) {
+                totalBacktrackCalls++;
+
                 if (currentCapacity > bottleneckCapacity) {
+                        prefixesPrunedByCapacity++;
                         return;
                 }
 
                 if (this.luPruningEnabled && stackState.lowerBound >= this.bestLuCost) {
+                        prefixesPrunedByLUBound++;
                         return;
                 }
+
+                prefixesExplored++;
 
                 if (current.size() == points.size()) {
                         int luCost = computeLuCost(current);
@@ -437,7 +487,7 @@ class Cluster {
                                 current.add(p);
 
                                 StackState nextStackState = stackState.copy();
-                                nextStackState.pickup(p.getID());
+                                nextStackState.pickup(p.getID(), capacityChange);
                                 
                                 // Check LU cost pruning condition
                                 int currentLuCost = computeLuCostWithPreviousStack(current);
@@ -445,6 +495,8 @@ class Cluster {
                                 
                                 if (currentLuCostDiff < this.seedLuCostDifference) {
                                         backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity + capacityChange, bottleneckCapacity, nextStackState);
+                                } else {
+                                        prefixesPrunedBySeedLU++;
                                 }
 
                                 current.remove(current.size() - 1);
@@ -466,6 +518,8 @@ class Cluster {
                                         
                                         if (currentLuCostDiff < this.seedLuCostDifference) {
                                                 backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity - capacityChange, bottleneckCapacity, nextStackState);
+                                        } else {
+                                                prefixesPrunedBySeedLU++;
                                         }
 
                                         current.remove(current.size() - 1);
@@ -492,6 +546,8 @@ class Cluster {
                                         
                                         if (currentLuCostDiff < this.seedLuCostDifference) {
                                                 backtrack(current, used, sourcesAdded, valid_orderings, currentCapacity - capacityChange, bottleneckCapacity, nextStackState);
+                                        } else {
+                                                prefixesPrunedBySeedLU++;
                                         }
 
                                         current.remove(current.size() - 1);
@@ -510,7 +566,17 @@ class Cluster {
 
         public int getLowerBoundLUCost() {
                 return this.lower_bound_lu_cost;
-        }       
+        }
+
+        // Backtracking statistics getters
+        public long getPrefixesExplored() { return this.prefixesExplored; }
+        public long getPrefixesPrunedByCapacity() { return this.prefixesPrunedByCapacity; }
+        public long getPrefixesPrunedByLUBound() { return this.prefixesPrunedByLUBound; }
+        public long getPrefixesPrunedBySeedLU() { return this.prefixesPrunedBySeedLU; }
+        public long getTotalBacktrackCalls() { return this.totalBacktrackCalls; }
+        public long getTotalPrefixesPruned() {
+                return this.prefixesPrunedByCapacity + this.prefixesPrunedByLUBound + this.prefixesPrunedBySeedLU;
+        }
 
         private int computeLuCost(List<Point> ordering) {
                 int luCost = 0;
@@ -575,14 +641,13 @@ class Cluster {
 	}
 
 	private void updateEndTime(Point point) {
-		if(this.end_time==0 || this.end_time < point.getTimeWindow().getEndTime()) {
+		if(this.end_time < point.getTimeWindow().getEndTime()) {
 			this.end_time = point.getTimeWindow().getEndTime();
 		}
-		
 	}
 
 	private void updateStartTime(Point point) {
-		if(this.start_time==0 || this.start_time > point.getTimeWindow().getStartTime()) {
+		if(this.start_time > point.getTimeWindow().getStartTime()) {
 			this.start_time = point.getTimeWindow().getStartTime();
 		}
 	}

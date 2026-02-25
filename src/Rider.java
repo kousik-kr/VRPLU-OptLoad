@@ -30,6 +30,22 @@ class Rider {
 	private boolean clusteringEnabled = true;
 	private boolean luPruningEnabled = true;
 	
+	// Aggregated statistics for experiments
+	private int numClusters = 0;
+	private long totalPrefixesExplored = 0;
+	private long totalPrefixesPruned = 0;
+	private long totalPrefixesPrunedByCapacity = 0;
+	private long totalPrefixesPrunedByLUBound = 0;
+	private long totalPrefixesPrunedBySeedLU = 0;
+	private long totalBacktrackCalls = 0;
+	private int totalClusterOrderings = 0;
+	private int totalCrossProductOrderings = 0;
+	private int totalValidOrderings = 0;
+	private int paretoFrontSize = 0;
+	private long clusteringTimeMs = 0;
+	private long enumerationTimeMs = 0;
+	private long validationTimeMs = 0;
+	
 	public Rider (Query query, int m) {
 		this(query, m, true, true);
 	}
@@ -47,7 +63,10 @@ class Rider {
 		this.luPruningEnabled = luPruningEnabled;
 		this.disjoint_clusters = new ArrayList<Cluster>();
 		this.valid_orderings = new ArrayList<List<Point>>();
+		long driverStart = System.currentTimeMillis();
 		driver();
+		long driverEnd = System.currentTimeMillis();
+		System.out.println("Total driver time: " + (driverEnd - driverStart) + " ms");
 	}
 
         private void driver() {
@@ -100,9 +119,48 @@ class Rider {
 			}
 			disjoint_clusters.add(singleCluster);
 		}
+		
+		long clusterEnd = System.currentTimeMillis();
+		this.numClusters = disjoint_clusters.size();
+		
 		findValidOrdernings();
 		
+		long enumEnd = System.currentTimeMillis();
+		
 		computeFinalOrder();
+		
+		long validEnd = System.currentTimeMillis();
+		
+		// Aggregate cluster statistics
+		for (Cluster cluster : disjoint_clusters) {
+			this.totalPrefixesExplored += cluster.getPrefixesExplored();
+			this.totalPrefixesPruned += cluster.getTotalPrefixesPruned();
+			this.totalPrefixesPrunedByCapacity += cluster.getPrefixesPrunedByCapacity();
+			this.totalPrefixesPrunedByLUBound += cluster.getPrefixesPrunedByLUBound();
+			this.totalPrefixesPrunedBySeedLU += cluster.getPrefixesPrunedBySeedLU();
+			this.totalBacktrackCalls += cluster.getTotalBacktrackCalls();
+			this.totalClusterOrderings += cluster.getOrderings().size();
+		}
+		this.totalCrossProductOrderings = this.valid_orderings.size();
+		this.paretoFrontSize = (this.pareto_optimal_orders != null) ? this.pareto_optimal_orders.size() : 0;
+		
+		// Print statistics summary
+		System.out.println("\n#STATS_BEGIN");
+		System.out.println("#STATS clusters=" + this.numClusters);
+		System.out.println("#STATS prefixes_explored=" + this.totalPrefixesExplored);
+		System.out.println("#STATS prefixes_pruned=" + this.totalPrefixesPruned);
+		System.out.println("#STATS pruned_by_capacity=" + this.totalPrefixesPrunedByCapacity);
+		System.out.println("#STATS pruned_by_lu_bound=" + this.totalPrefixesPrunedByLUBound);
+		System.out.println("#STATS pruned_by_seed_lu=" + this.totalPrefixesPrunedBySeedLU);
+		System.out.println("#STATS total_backtrack_calls=" + this.totalBacktrackCalls);
+		System.out.println("#STATS cluster_orderings=" + this.totalClusterOrderings);
+		System.out.println("#STATS cross_product_orderings=" + this.totalCrossProductOrderings);
+		System.out.println("#STATS valid_orderings=" + this.totalValidOrderings);
+		System.out.println("#STATS pareto_front_size=" + this.paretoFrontSize);
+		System.out.println("#STATS seed_lu_cost=" + this.seed_lu_cost);
+		System.out.println("#STATS seed_distance=" + String.format("%.2f", this.seed_distance));
+		System.out.println("#STATS lower_bound_lu_cost=" + this.lower_bound_lu_cost);
+		System.out.println("#STATS_END");
 	}
 
 	private void findValidOrdernings() {
@@ -124,12 +182,11 @@ class Rider {
 		
 		// Phase 1: Sequential setup - each cluster depends on previous state
 		for(Cluster cluster:disjoint_clusters) {
-//			for(Entry<Integer, Point> entry: current_consumptions.entrySet()) {
-//				current_consumption+= this.service_requests.get(entry.getValue().getID()).getServiceQuantity();
-//			}
-			// For now, give each cluster the full capacity to enumerate orderings
-			// Capacity constraints will be enforced during final validation
-			cluster.setAvailableCapacity(this.max_capacity);
+			// Compute the residual capacity: subtract load already on the vehicle
+			// from items picked up in earlier clusters that haven't been delivered yet
+			int carriedLoad = computeConsumption(currentStack);
+			int residualCapacity = this.max_capacity - carriedLoad;
+			cluster.setAvailableCapacity(residualCapacity);
 			cluster.computeLowerBoundLUCost();
 			
 			// Set the seed LU cost difference for pruning
@@ -473,30 +530,54 @@ class Rider {
 	            filtered_orders.add(temp_ordering);
 	        }
 	        int index = counter.incrementAndGet();
-	        System.out.println(index + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
+	        if (index % 100 == 0 || index == this.valid_orderings.size()) {
+	            System.out.println(index + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
+	        }
 	    });
+	    
+	    this.totalValidOrderings = filtered_orders.size();
 	    
 	    for(Ordering temp_ordering : filtered_orders) {
 	    		checkDominance(temp_ordering);
 	    }
-		
-//		for(List<Point> ordering : this.valid_orderings) {
-//			Ordering temp_ordering = new Ordering(ordering,this.QUERY_START_TIME,this.QUERY_END_TIME);
-//			if(temp_ordering.validateAndPrunePoints())
-//				checkDominance(temp_ordering);
-//			System.out.println(i++ + " of " + this.valid_orderings.size() + " ordering is processed. Query id: " + query_id);
-//		}
 	}
 	
+	/**
+	 * Maintain the Pareto-non-dominated front when a new candidate arrives.
+	 *
+	 * Dominance definition (3 objectives):
+	 *   A dominates B iff A is at-least-as-good on ALL objectives
+	 *   AND strictly better on at least one.
+	 *   - Maximise: served requests  (higher is better)
+	 *   - Minimise: LU cost          (lower  is better)
+	 *   - Minimise: distance         (lower  is better)
+	 */
 	private void checkDominance(Ordering temp_ordering) {
 		List<Ordering> dominated = new ArrayList<Ordering>();
 		for(Ordering ordering:this.pareto_optimal_orders) {
-			if(ordering.getLUCost()<=temp_ordering.getLUCost() && ordering.getDistance()<=temp_ordering.getDistance() 
-					&& ordering.getNumberofProcessedRequests()>=temp_ordering.getNumberofProcessedRequests()) {
-				return;
+			// Check if an existing solution dominates the candidate
+			boolean existingAtLeastAsGood =
+				ordering.getLUCost() <= temp_ordering.getLUCost()
+				&& ordering.getDistance() <= temp_ordering.getDistance()
+				&& ordering.getNumberofProcessedRequests() >= temp_ordering.getNumberofProcessedRequests();
+			boolean existingStrictlyBetter =
+				ordering.getLUCost() < temp_ordering.getLUCost()
+				|| ordering.getDistance() < temp_ordering.getDistance()
+				|| ordering.getNumberofProcessedRequests() > temp_ordering.getNumberofProcessedRequests();
+			if (existingAtLeastAsGood && existingStrictlyBetter) {
+				return; // candidate is dominated — discard it
 			}
-			else if(ordering.getLUCost()>=temp_ordering.getLUCost() && ordering.getDistance()>=temp_ordering.getDistance()
-					&& ordering.getNumberofProcessedRequests()>=temp_ordering.getNumberofProcessedRequests()) {
+
+			// Check if the candidate dominates the existing solution
+			boolean candidateAtLeastAsGood =
+				temp_ordering.getLUCost() <= ordering.getLUCost()
+				&& temp_ordering.getDistance() <= ordering.getDistance()
+				&& temp_ordering.getNumberofProcessedRequests() >= ordering.getNumberofProcessedRequests();
+			boolean candidateStrictlyBetter =
+				temp_ordering.getLUCost() < ordering.getLUCost()
+				|| temp_ordering.getDistance() < ordering.getDistance()
+				|| temp_ordering.getNumberofProcessedRequests() > ordering.getNumberofProcessedRequests();
+			if (candidateAtLeastAsGood && candidateStrictlyBetter) {
 				dominated.add(ordering);
 			}
 		}
@@ -534,6 +615,39 @@ class Rider {
 		return this.lower_bound_lu_cost;
 	}
 	
+	// Statistics getters for experiment output
+	public int getNumClusters() { return this.numClusters; }
+	public long getTotalPrefixesExplored() { return this.totalPrefixesExplored; }
+	public long getTotalPrefixesPruned() { return this.totalPrefixesPruned; }
+	public long getTotalPrefixesPrunedByCapacity() { return this.totalPrefixesPrunedByCapacity; }
+	public long getTotalPrefixesPrunedByLUBound() { return this.totalPrefixesPrunedByLUBound; }
+	public long getTotalPrefixesPrunedBySeedLU() { return this.totalPrefixesPrunedBySeedLU; }
+	public long getTotalBacktrackCalls() { return this.totalBacktrackCalls; }
+	public int getTotalClusterOrderings() { return this.totalClusterOrderings; }
+	public int getTotalCrossProductOrderings() { return this.totalCrossProductOrderings; }
+	public int getTotalValidOrderings() { return this.totalValidOrderings; }
+	public int getParetoFrontSize() { return this.paretoFrontSize; }
+	
+	/**
+	 * Returns a formatted stats line for experiment output parsing.
+	 */
+	public String getStatsLine() {
+		return "#STATS clusters=" + numClusters
+			+ " prefixes_explored=" + totalPrefixesExplored
+			+ " prefixes_pruned=" + totalPrefixesPruned
+			+ " pruned_capacity=" + totalPrefixesPrunedByCapacity
+			+ " pruned_lu_bound=" + totalPrefixesPrunedByLUBound
+			+ " pruned_seed_lu=" + totalPrefixesPrunedBySeedLU
+			+ " backtrack_calls=" + totalBacktrackCalls
+			+ " cluster_orderings=" + totalClusterOrderings
+			+ " cross_product=" + totalCrossProductOrderings
+			+ " valid_orderings=" + totalValidOrderings
+			+ " pareto_size=" + paretoFrontSize
+			+ " seed_lu=" + seed_lu_cost
+			+ " seed_dist=" + String.format("%.2f", seed_distance)
+			+ " lb_lu=" + lower_bound_lu_cost;
+	}
+
         private List<Cluster> splitClusterBySpatialCoordinates(Cluster currentCluster) {
             List<Point> points = currentCluster.getPoints();
             List<Cluster> clusters = new ArrayList<>();

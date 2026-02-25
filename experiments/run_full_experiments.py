@@ -19,7 +19,7 @@ import time
 import shutil
 from pathlib import Path
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Optional
 import subprocess
 
@@ -43,9 +43,13 @@ class ExperimentResult:
     runtime_ms: int = 0
     capacity: int = 0
     error_message: str = ""
+    # Per-Pareto-route breakdown (list of dicts with served/lu_cost/distance/route)
+    pareto_routes: List[Dict] = field(default_factory=list)
     
     def to_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        d["pareto_routes"] = self.pareto_routes if self.pareto_routes else []
+        return d
 
 
 class RobustExperimentRunner:
@@ -176,28 +180,41 @@ class RobustExperimentRunner:
     
     def parse_output(self, output: str, algorithm: str, query_id: str, 
                      runtime_ms: int) -> ExperimentResult:
-        """Parse solver output and extract metrics."""
+        """Parse solver output and extract metrics (per-Pareto-route)."""
         
         result = ExperimentResult(
             query_id=query_id,
             algorithm=algorithm,
             success=False,
-            runtime_ms=runtime_ms
+            runtime_ms=runtime_ms,
+            pareto_routes=[]
         )
         
         import re
         
         try:
-            # Parse output file content
-            # Format: [Route...]\tNumber of Successful Requests:X\tL-U Cost:Y\tDistance:Z
-            match = re.search(
-                r"Number of Successful Requests:(\d+)\s*L-U Cost:(\d+)\s*Distance:([\d.]+)",
-                output
+            # Parse ALL route lines — one per Pareto-optimal path
+            route_pattern = re.compile(
+                r"(\[.*?\])\s*Number of Successful Requests:(\d+)\s*L-U Cost:(\d+)\s*Distance:([\d.]+)"
             )
-            if match:
-                result.served_requests = int(match.group(1))
-                result.lu_cost = int(match.group(2))
-                result.distance = float(match.group(3))
+            for match in route_pattern.finditer(output):
+                route_str = match.group(1)
+                served = int(match.group(2))
+                lu = int(match.group(3))
+                dist = float(match.group(4))
+                result.pareto_routes.append({
+                    "served": served,
+                    "lu_cost": lu,
+                    "distance": dist,
+                    "route": route_str,
+                })
+            
+            if result.pareto_routes:
+                # For backward compat, store the first (best) route's metrics
+                # in the top-level fields
+                result.served_requests = result.pareto_routes[0]["served"]
+                result.lu_cost = result.pareto_routes[0]["lu_cost"]
+                result.distance = result.pareto_routes[0]["distance"]
                 result.success = True
             
             # Parse runtime from Java output

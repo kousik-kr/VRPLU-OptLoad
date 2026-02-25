@@ -10,6 +10,9 @@ class SolverFactory {
         // Utility class
     }
 
+    // Thread-local storage for the last Rider instance (for stats extraction)
+    private static final ThreadLocal<Rider> lastRider = new ThreadLocal<>();
+
     /**
      * Build the solver requested by the user for the provided query.
      *
@@ -30,13 +33,42 @@ class SolverFactory {
             case BAZELMANS:
                 return () -> new LinkedList<RoutePlan>(new BazelmansBaselineSolver(query).solve());
             case OPTLOAD_NO_CLUSTER:
-                return () -> new LinkedList<RoutePlan>(new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE, false, true).getFinalOrders());
+                return () -> {
+                    Rider rider = new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE, false, true);
+                    lastRider.set(rider);
+                    return new LinkedList<RoutePlan>(rider.getFinalOrders());
+                };
             case OPTLOAD_NO_LU_PRUNING:
-                return () -> new LinkedList<RoutePlan>(new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE, true, false).getFinalOrders());
+                return () -> {
+                    Rider rider = new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE, true, false);
+                    lastRider.set(rider);
+                    return new LinkedList<RoutePlan>(rider.getFinalOrders());
+                };
             case DEFAULT_CLUSTERING:
             default:
-                return () -> new LinkedList<RoutePlan>(new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE).getFinalOrders());
+                return () -> {
+                    Rider rider = new Rider(query, VRPLoadingUnloadingMain.MAX_CLUSTER_SIZE);
+                    lastRider.set(rider);
+                    return new LinkedList<RoutePlan>(rider.getFinalOrders());
+                };
         }
+    }
+
+    /**
+     * Get the last Rider instance created by an OptLoad solver variant.
+     * Returns null for non-OptLoad solvers.
+     */
+    static Rider getLastRider() {
+        return lastRider.get();
+    }
+
+    /**
+     * Check if the solver type is an OptLoad variant that produces Rider stats.
+     */
+    static boolean isOptLoadVariant(SolverType solverType) {
+        return solverType == SolverType.DEFAULT_CLUSTERING
+            || solverType == SolverType.OPTLOAD_NO_CLUSTER
+            || solverType == SolverType.OPTLOAD_NO_LU_PRUNING;
     }
 
     /**

@@ -38,9 +38,18 @@ public class VRPLoadingUnloadingMain {
         private static String currentDirectory = System.getProperty("user.dir");
         private static SolverType solverType = SolverType.DEFAULT_CLUSTERING;
         private static int nodeCount = 285050;  // Default to London
+        private static int threadCount = 0;     // 0 = use default ForkJoinPool parallelism
 
         public static void main(String[] args) throws IOException {
                 parseArguments(args);
+                
+                // Set thread count for ForkJoinPool if specified
+                if (threadCount > 0) {
+                        System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", 
+                                          String.valueOf(threadCount));
+                        System.out.println("Set ForkJoinPool parallelism to: " + threadCount);
+                }
+                
                 GenerateTDGraph.setNodeCount(nodeCount);
                 System.out.println("Starting time-dependent graph generation from directory: " + currentDirectory);
                 GenerateTDGraph.driver(currentDirectory);
@@ -54,25 +63,35 @@ public class VRPLoadingUnloadingMain {
          * Parse command-line arguments to determine working directory and solver selection.
          * Arguments can include solver flags (--cluster, --insertion, etc.), node count (--nodes=N),
          * or a query file path.
+         * Uses two passes: first parse flags (to get nodeCount), then handle query file copy.
          */
         private static void parseArguments(String[] args) {
+                String queryFilePath = null;
+                
+                // First pass: parse all flags and directory
                 for (int i = 0; i < args.length; i++) {
                         if (args[i].startsWith("--nodes=")) {
                                 nodeCount = Integer.parseInt(args[i].substring(8));
                                 System.out.println("Using node count: " + nodeCount);
+                        } else if (args[i].startsWith("--threads=")) {
+                                threadCount = Integer.parseInt(args[i].substring(10));
+                                System.out.println("Using thread count: " + threadCount);
                         } else if (args[i].startsWith("--")) {
                                 solverType = SolverType.fromArg(args[i]);
                                 System.out.println(SolverFactory.describeSolver(solverType));
                         } else if (new File(args[i]).exists()) {
-                                // If it's a directory, use it as working directory
                                 File f = new File(args[i]);
                                 if (f.isDirectory()) {
                                         currentDirectory = args[i];
                                 } else {
-                                        // It's a query file - copy it to the expected location
-                                        copyQueryFile(args[i]);
+                                        queryFilePath = args[i];
                                 }
                         }
+                }
+                
+                // Second pass: copy query file (now nodeCount is set correctly)
+                if (queryFilePath != null) {
+                        copyQueryFile(queryFilePath);
                 }
         }
         
@@ -146,6 +165,7 @@ public class VRPLoadingUnloadingMain {
         private static void processQueries() throws IOException {
                 String outputPrefix = SolverFactory.resolveOutputPrefix(solverType);
                 String outputFile = currentDirectory + "/" + outputPrefix + Graph.get_vertex_count() + ".txt";
+                boolean isOptLoad = SolverFactory.isOptLoadVariant(solverType);
 
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
                         while (!queries.isEmpty()) {
@@ -156,7 +176,16 @@ public class VRPLoadingUnloadingMain {
                                 long end = System.currentTimeMillis();
 
                                 System.out.println("Finished processing query " + query.getID() + " in " + (end - start) + " ms using output prefix " + outputPrefix);
-                                writeOutput(outputOrder, writer, start, end);
+                                
+                                // For OptLoad variants, include stats line in output
+                                String statsLine = null;
+                                if (isOptLoad) {
+                                        Rider rider = SolverFactory.getLastRider();
+                                        if (rider != null) {
+                                                statsLine = rider.getStatsLine();
+                                        }
+                                }
+                                writeOutput(outputOrder, writer, start, end, statsLine);
                         }
                 }
                 System.out.println("All query processing is done.");
@@ -194,7 +223,7 @@ public class VRPLoadingUnloadingMain {
          * in the canonical format consumed by the surrounding tooling, followed by the
          * per-query runtime expressed in seconds.
          */
-        private static void writeOutput(List<? extends RoutePlan> outputOrders, BufferedWriter writer, long start, long end) {
+        private static void writeOutput(List<? extends RoutePlan> outputOrders, BufferedWriter writer, long start, long end, String statsLine) {
                 try {
                         for (RoutePlan outputOrder : outputOrders) {
                                 List<Point> order = outputOrder.getOrder();
@@ -214,6 +243,11 @@ public class VRPLoadingUnloadingMain {
                                         .append("\tDistance:")
                                         .append(outputOrder.getDistance());
                                 writer.write(routeBuilder.toString());
+                                writer.newLine();
+                        }
+                        // Write stats line if available (OptLoad variants)
+                        if (statsLine != null) {
+                                writer.write(statsLine);
                                 writer.newLine();
                         }
                         writer.write((end - start) / 1000F + "\n\n");
