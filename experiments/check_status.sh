@@ -27,7 +27,7 @@ cp = json.load(open('experiments/results/checkpoint.json'))
 completed = cp.get('completed', [])
 from collections import Counter
 steps = Counter(c.split('_')[0] for c in completed)
-total_needed = {'step1': 150, 'step2': 240, 'step3': 90, 'step4': 240, 'step5': 80, 'step6': 60, 'step7': 80}
+total_needed = {'step1': 150, 'step2': 320, 'step3': 120, 'step4': 240, 'step5': 80, 'step6': 60, 'step7': 80}
 print('Step  | Done | Total | Remaining | Progress')
 print('------|------|-------|-----------|----------')
 total_done = 0

@@ -411,7 +411,7 @@ def step2_scalability_requests(checkpoint, solver_filter=None):
     print("=" * 60)
 
     experiments = []
-    solvers = ["OptLoad", "Insertion", "FoodMatch"]
+    solvers = ["OptLoad", "Insertion", "FoodMatch", "LIFO"]
 
     for n in [5, 10, 15, 20, 25, 30, 35, 40]:
         query_dir = QUERIES_DIR / f"N_{n}"
@@ -444,7 +444,7 @@ def step3_network_scalability(checkpoint, solver_filter=None):
     print("=" * 60)
 
     experiments = []
-    solvers = ["OptLoad", "Insertion", "FoodMatch"]
+    solvers = ["OptLoad", "Insertion", "FoodMatch", "LIFO"]
 
     for network in ["oldenburg", "california", "london"]:
         if network == "london":
