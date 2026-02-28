@@ -1,0 +1,10 @@
+solver_norm,network,served
+FoodMatch,california,0.9
+FoodMatch,london,8.8
+FoodMatch,oldenburg,7.6
+Insertion,california,0.0
+Insertion,london,14.1
+Insertion,oldenburg,13.8
+OptLoad,california,0.0
+OptLoad,london,7.266666666666667
+OptLoad,oldenburg,1.1

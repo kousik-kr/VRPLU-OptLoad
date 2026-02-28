@@ -1,0 +1,7 @@
+solver_norm,threads,served,lu_cost,distance,runtime_s
+OptLoad,1,6.3,7.0,4492.7,0.4857
+OptLoad,2,6.3,7.0,4492.7,0.49169999999999997
+OptLoad,4,6.3,7.0,4492.7,0.479
+OptLoad,8,6.3,7.0,4492.7,0.487
+OptLoad,16,6.3,7.0,4492.7,0.4948
+OptLoad,24,6.3,7.0,4492.7,0.47850000000000004

@@ -1,0 +1,5 @@
+solver,tw_duration,hypervolume
+OptLoad,30.0,0.0
+OptLoad,60.0,571158.8126860001
+OptLoad,90.0,1837713.15
+OptLoad,120.0,7325621.8044788
