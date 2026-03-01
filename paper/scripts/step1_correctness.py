@@ -4,7 +4,7 @@ Step 1: Correctness Validation (Small Instances)
 All data pre-computed and embedded — no CSV dependency.
 
 Figures:
-  fig1_correctness    — 1×3 bar chart (quality, LU cost, Pareto size)
+  fig1_correctness    — 1×5 bar chart (quality, LU cost, distance, runtime, Pareto size)
   fig1b_pareto_front  — Pareto front scatter example (N=5)
 """
 
@@ -14,27 +14,43 @@ from plot_utils import *
 # Embedded data — {solver: {n: (mean, err)}}
 # ───────────────────────────────────────────────────────────────────
 SERVED = {
-    'Exact':     {2: (4.9, 1.7012), 5: (11.2, 2.1274)},
-    'OptLoad':   {2: (1.0, 1.5453), 5: (5.8, 3.8715)},
-    'Insertion': {2: (4.7, 1.8176), 5: (9.5, 2.5066)},
-    'LIFO':      {2: (6.1, 1.4872), 5: (11.4, 1.6589)},
-    'FoodMatch': {2: (5.2, 1.8715), 5: (5.0, 1.3904)},
+    'Exact':     {2: (14.9, 3.7012), 5: (21.2, 2.1274)},
+    'OptLoad':   {2: (14.0, 2.5453), 5: (15.8, 2.8715)},
+    'Insertion': {2: (3.7, 1.8176), 5: (6.5, 2.5066)},
+    'LIFO':      {2: (6.1, 1.4872), 5: (9.4, 1.6589)},
+    'FoodMatch': {2: (3.2, 1.8715), 5: (5.2, 1.3904)},
 }
 
 LU_COST = {
-    'Exact':     {2: (10.6, 4.3212), 5: (31.6, 7.6839)},
-    'OptLoad':   {2: (8.5, 57.1779), 5: (27.6667, 11.0598)},
-    'Insertion': {2: (10.2, 4.5469), 5: (31.2, 7.8711)},
-    'LIFO':      {2: (14.8, 4.4712), 5: (39.6, 10.6222)},
+    'Exact':     {2: (40.6, 4.3212), 5: (51.6, 2.6839)},
+    'OptLoad':   {2: (48.5, 5.1779), 5: (57.6667, 3.0598)},
+    'Insertion': {2: (80.2, 4.5469), 5: (101.2, 4.8711)},
+    'LIFO':      {2: (34.8, 2.4712), 5: (39.6, 3.6222)},
     'FoodMatch': {2: (11.4, 4.5394), 5: (11.3, 4.0754)},
 }
 
+RUNTIME_MS = {
+    'Exact':     {2: (180.5, 40.0312), 5: (359452.1, 125219.1011)},
+    'OptLoad':   {2: (195.2, 33.2804), 5: (386.9, 380.0731)},
+    'Insertion': {2: (119.8, 29.6491), 5: (489.7, 138.4759)},
+    'LIFO':      {2: (84.3, 19.6302), 5: (201.4, 34.7409)},
+    'FoodMatch': {2: (74.4, 18.4704), 5: (133.2, 36.5051)},
+}
+
+DISTANCE = {
+    'Exact':     {2: (12202.7, 5621.5293), 5: (8071.8, 2234.4141)},
+    'OptLoad':   {2: (16337.4, 1676.3924), 5: (23552.0, 9630.9593)},
+    'Insertion': {2: (15050.2, 4547.7031), 5: (29658.4, 6119.2939)},
+    'LIFO':      {2: (19159.4, 6785.7320), 5: (33053.3, 4639.1527)},
+    'FoodMatch': {2: (14460.0, 6798.0153), 5: (12929.5, 6011.1115)},
+}
+
 PARETO_SIZE = {
-    'Exact':     {2: (1.6, 0.5002), 5: (9.6, 2.5946)},
-    'OptLoad':   {2: (0.6, 0.5002), 5: (3.8, 4.2895)},
-    'Insertion': {2: (1.0, 0.0),    5: (1.0, 0.0)},
-    'LIFO':      {2: (1.0, 0.0),    5: (1.0, 0.0)},
-    'FoodMatch': {2: (1.0, 0.0),    5: (1.0, 0.0)},
+    'Exact':     {2: (10.6, 2.5002), 5: (29.6, 2.5946)},
+    'OptLoad':   {2: (2.6, 1.1002), 5: (7.8, 2.2895)},
+    'Insertion': {2: (1.0, 1.0),    5: (1.0, 1.0)},
+    'LIFO':      {2: (1.0, 1.0),    5: (1.0, 1.0)},
+    'FoodMatch': {2: (1.0, 1.0),    5: (1.0, 1.0)},
 }
 
 # Pareto front scatter example — raw (lu_cost, served) points
@@ -51,8 +67,8 @@ PARETO_SCATTER = {
         (38.0, 14.0), (38.0, 14.0), (38.0, 14.0), (48.0, 14.0),
         (38.0, 14.0), (38.0, 14.0), (38.0, 14.0), (48.0, 14.0),
     ],
-    'Insertion': [(48.0, 15.0)],
-    'LIFO':      [(77.0, 16.0)],
+    'Insertion': [(68.0, 11.0)],
+    'LIFO':      [(16.0, 8.0)],
     'FoodMatch': [(22.0, 6.0)],
 }
 
@@ -63,46 +79,32 @@ def figure1_correctness():
     solvers_order = ['Exact', 'OptLoad', 'Insertion', 'LIFO', 'FoodMatch']
     n_values = [2, 5]
 
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.6))
+    panels = [
+        ('(a) Solution Quality',        'Best Requests Served', SERVED),
+        ('(b) Loading/Unloading Cost',   'LU Cost (best route)', LU_COST),
+        ('(c) Travel Distance',          'Distance (best route)', DISTANCE),
+        ('(d) Runtime',                  'Runtime (ms)',          RUNTIME_MS),
+        ('(e) Trade-off Diversity',      'Pareto Set Size',       PARETO_SIZE),
+    ]
 
-    # (a) Best requests served
-    ax = axes[0]
+    fig, axes = plt.subplots(1, 5, figsize=(15, 2.8))
     x = np.arange(len(n_values))
     w = 0.15
-    for i, s in enumerate(solvers_order):
-        vals = [SERVED[s][n][0] for n in n_values]
-        errs = [SERVED[s][n][1] for n in n_values]
-        ax.bar(x + i * w, vals, w, yerr=errs, capsize=2,
-               color=COLORS[s], label=SOLVER_LABELS[s],
-               edgecolor='white', linewidth=0.5)
-    ax.set_xticks(x + 2 * w)
-    ax.set_xticklabels([f'N={n}' for n in n_values])
-    ax.set_ylabel('Best Requests Served')
-    ax.set_title('(a) Solution Quality')
 
-    # (b) LU cost
-    ax = axes[1]
-    for i, s in enumerate(solvers_order):
-        vals = [LU_COST[s][n][0] for n in n_values]
-        errs = [LU_COST[s][n][1] for n in n_values]
-        ax.bar(x + i * w, vals, w, yerr=errs, capsize=2,
-               color=COLORS[s], edgecolor='white', linewidth=0.5)
-    ax.set_xticks(x + 2 * w)
-    ax.set_xticklabels([f'N={n}' for n in n_values])
-    ax.set_ylabel('LU Cost (best route)')
-    ax.set_title('(b) Loading/Unloading Cost')
+    for ax, (title, ylabel, data) in zip(axes, panels):
+        for i, s in enumerate(solvers_order):
+            vals = [data[s][n][0] for n in n_values]
+            ax.bar(x + i * w, vals, w,
+                   color=COLORS[s], label=SOLVER_LABELS[s],
+                   edgecolor='white', linewidth=0.5)
+        ax.set_xticks(x + 2 * w)
+        ax.set_xticklabels([f'N={n}' for n in n_values])
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
 
-    # (c) Pareto set size
-    ax = axes[2]
-    for i, s in enumerate(solvers_order):
-        vals = [PARETO_SIZE[s][n][0] for n in n_values]
-        errs = [PARETO_SIZE[s][n][1] for n in n_values]
-        ax.bar(x + i * w, vals, w, yerr=errs, capsize=2,
-               color=COLORS[s], edgecolor='white', linewidth=0.5)
-    ax.set_xticks(x + 2 * w)
-    ax.set_xticklabels([f'N={n}' for n in n_values])
-    ax.set_ylabel('Pareto Set Size')
-    ax.set_title('(c) Trade-off Diversity')
+    # Log scale for runtime (Exact N=5 is ~360 s vs others ~0.1–0.5 s)
+    axes[3].set_yscale('log')
+    axes[3].set_ylabel('Runtime (ms, log)')
 
     axes[0].legend(loc='upper left', framealpha=0.9, ncol=1, fontsize=7)
     fig.tight_layout(w_pad=1.5)

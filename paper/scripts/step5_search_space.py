@@ -89,6 +89,11 @@ def figure5_search_space():
     ax2.set_xlabel('Number of Requests (N)')
     ax2.set_ylabel('Pruning Rate (%)')
     ax2_twin.set_ylabel('LU Bound Tightness')
+    ax2_twin.axvline(x=n_vals[-1] + 1.5, color='black', linewidth=0.8)  # visual separator for right axis
+    ax2_twin.spines['right'].set_visible(True)
+    ax2_twin.spines['right'].set_linewidth(1.2)
+    ax2_twin.spines['right'].set_color('black')
+    ax2_twin.tick_params(axis='y', direction='out', length=5)
     ax2.set_title('Search Space Reduction Metrics')
     lines1, labels1 = ax2.get_legend_handles_labels()
     lines2, labels2 = ax2_twin.get_legend_handles_labels()
