@@ -8,6 +8,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Exact solver that enumerates <em>all</em> feasible routes and returns the
@@ -62,13 +68,16 @@ public class ExactAlgorithmSolver {
     private final List<Point> deliveries;
     private final List<Integer> quantities;
 
-    /** All feasible solutions found during enumeration. */
-    private final List<ExactSolution> feasibleSolutions = new ArrayList<>();
+    /** Thread-safe collection for feasible solutions (written by worker threads). */
+    private final ConcurrentLinkedQueue<ExactSolution> feasibleSolutions = new ConcurrentLinkedQueue<>();
 
-    /** Progress counters. */
-    private long permutationsEvaluated = 0;
-    private long feasibleCount = 0;
-    private long lastReportTime = 0;
+    /** Thread-safe progress counters. */
+    private final AtomicLong permutationsEvaluated = new AtomicLong(0);
+    private final AtomicLong feasibleCount = new AtomicLong(0);
+    private volatile long lastReportTime = 0;
+
+    /** Thread pool for parallel feasibility checking. */
+    private ExecutorService executor;
 
     // ------------------------------------------------------------------ //
     //  Construction                                                       //
@@ -106,11 +115,19 @@ public class ExactAlgorithmSolver {
                 + ", " + query.getQueryEndTime() + "]");
         System.out.println("  Total subsets to enumerate: " + (1L << n));
 
+        // Create thread pool for parallel feasibility checking
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        System.out.println("  Using " + numThreads + " threads for parallel feasibility checking");
+        LinkedBlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(numThreads * 10000);
+        executor = new ThreadPoolExecutor(numThreads, numThreads,
+                0L, TimeUnit.MILLISECONDS, workQueue,
+                new ThreadPoolExecutor.CallerRunsPolicy());
+
         long startTime = System.currentTimeMillis();
         lastReportTime = startTime;
 
-        // --- Phase 1: enumerate all combinations (subsets) of services ---
-        // Iterate over every non-empty subset using a bitmask.
+        // --- Phase 1 & 2: Sequential enumeration of combinations + permutations ---
+        // Feasibility checking is submitted to the thread pool in parallel.
         for (int mask = 1; mask < (1 << n); mask++) {
             List<Integer> subset = new ArrayList<>();
             for (int i = 0; i < n; i++) {
@@ -130,19 +147,29 @@ public class ExactAlgorithmSolver {
             if (now - lastReportTime > 5000) {
                 lastReportTime = now;
                 System.out.println("    Subsets processed: " + mask + "/" + ((1 << n) - 1)
-                        + ", permutations evaluated: " + permutationsEvaluated
-                        + ", feasible: " + feasibleCount);
+                        + ", permutations evaluated: " + permutationsEvaluated.get()
+                        + ", feasible: " + feasibleCount.get());
             }
+        }
+
+        // Wait for all parallel feasibility checks to complete
+        executor.shutdown();
+        try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupted while waiting for feasibility checks.");
         }
 
         long elapsed = System.currentTimeMillis() - startTime;
 
         System.out.println("  Enumeration complete in " + elapsed + " ms");
-        System.out.println("    Permutations evaluated: " + permutationsEvaluated
-                + ", feasible routes: " + feasibleCount);
+        System.out.println("    Permutations evaluated: " + permutationsEvaluated.get()
+                + ", feasible routes: " + feasibleCount.get());
 
         // --- Phase 3: extract Pareto-non-dominated front ---
-        List<ExactSolution> paretoFront = extractParetoFront(feasibleSolutions);
+        List<ExactSolution> paretoFront = extractParetoFront(
+                new ArrayList<>(feasibleSolutions));
 
         if (paretoFront.isEmpty()) {
             System.out.println("  No feasible solution found.");
@@ -184,7 +211,9 @@ public class ExactAlgorithmSolver {
         // When all 2*|subset| points have been placed we have a complete
         // permutation – evaluate it.
         if (current.size() == 2 * subset.size()) {
-            evaluateRoute(subset, current);
+            // Snapshot the sequence and submit feasibility check to thread pool
+            final List<Point> sequenceSnapshot = new ArrayList<>(current);
+            executor.submit(() -> evaluateRoute(subset, sequenceSnapshot));
             return;
         }
 
@@ -228,7 +257,7 @@ public class ExactAlgorithmSolver {
      * distance, then store the solution.
      */
     private void evaluateRoute(List<Integer> subset, List<Point> sequence) {
-        permutationsEvaluated++;
+        permutationsEvaluated.incrementAndGet();
 
         double currentTime = query.getQueryStartTime();
         double totalDistance = 0.0;
@@ -300,7 +329,7 @@ public class ExactAlgorithmSolver {
 
         feasibleSolutions.add(
                 new ExactSolution(fullRoute, processedQuantity, luCost, totalDistance));
-        feasibleCount++;
+        feasibleCount.incrementAndGet();
     }
 
     // ------------------------------------------------------------------ //
