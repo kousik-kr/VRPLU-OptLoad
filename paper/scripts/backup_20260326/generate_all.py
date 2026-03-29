@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Master script for the new 22-plot grouped figure pipeline."""
+"""
+Master script — run all step plotting scripts sequentially.
+Each script is self-contained with embedded data (no CSV required).
+
+Usage:
+    python3 generate_all.py          # generate all figures
+    python3 generate_all.py 1 3 7    # generate only steps 1, 3, 7
+"""
 
 import sys
 import importlib
@@ -10,8 +17,10 @@ STEP_MODULES = {
     2: ('step2_scalability', 'figure2_scalability'),
     3: ('step3_network', 'figure3_network'),
     4: ('step4_ablation', 'figure4_ablation'),
+    5: ('step5_search_space', 'figure5_search_space'),
     6: ('step6_parallel', 'figure6_parallel'),
     7: ('step7_sensitivity', 'figure7_sensitivity'),
+    'summary': ('summary_table', 'figure_summary_table'),
 }
 
 
@@ -19,12 +28,15 @@ def main():
     if len(sys.argv) > 1:
         steps = []
         for arg in sys.argv[1:]:
-            steps.append(int(arg))
+            if arg.lower() == 'summary':
+                steps.append('summary')
+            else:
+                steps.append(int(arg))
     else:
-        steps = [1, 2, 3, 4, 6, 7]
+        steps = [1, 2, 3, 4, 5, 6, 7, 'summary']
 
     print("=" * 60)
-    print("Generating grouped publication plots (22 panels total)")
+    print("Generating Publication-Quality Plots (data-embedded)")
     print(f"Steps: {steps}")
     print("=" * 60)
 

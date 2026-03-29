@@ -1,113 +1,165 @@
 #!/usr/bin/env python3
-"""
-Step 7: Sensitivity Analysis
-All data pre-computed and embedded — no CSV dependency.
+"""Step 7: Capacity sensitivity with runtime table + 1x3 scatter row."""
 
-Figures:
-  fig7_sensitivity        — 2×2 (capacity→quality/runtime, TW→quality/runtime)
-  fig7b_pareto_sensitivity — 1×2 Pareto diversity vs capacity & TW
-"""
+import matplotlib.pyplot as plt
 
-from plot_utils import *
+from plot_utils import save_fig
 
-# ───────────────────────────────────────────────────────────────────
-# Embedded data — {param_value: (mean, lo, hi)}
-# ───────────────────────────────────────────────────────────────────
-CAP_SERVED  = {6: (0.0, 0.0, 0.0), 8: (0.0, 0.0, 0.0), 10: (0.6, -0.7573, 1.9573), 12: (0.6, -0.7573, 1.9573)}
-CAP_RUNTIME = {6: (9.762, 8.492, 11.032), 8: (11.3561, 9.4513, 13.2609), 10: (10.6959, 8.5625, 12.8293), 12: (12.4484, 10.5934, 14.3034)}
-CAP_PARETO  = {6: (0.2, -0.1016, 0.5016), 8: (0.1, -0.1262, 0.3262), 10: (0.2, -0.2524, 0.6524), 12: (0.5, -0.408, 1.408)}
 
-TW_SERVED   = {30: (0.0, 0.0, 0.0), 60: (1.1, -1.3884, 3.5884), 90: (0.5, -0.6311, 1.6311), 120: (4.0, 0.4955, 7.5045)}
-TW_RUNTIME  = {30: (11.6434, 10.4285, 12.8583), 60: (14.6026, 10.8539, 18.3513), 90: (13.3251, 11.3654, 15.2848), 120: (13.1501, 9.6189, 16.6813)}
-TW_PARETO   = {30: (0.2, -0.1016, 0.5016), 60: (0.9, -0.8987, 2.6987), 90: (0.3, -0.1828, 0.7828), 120: (1.0, 0.3256, 1.6744)}
+FONT_SIZE = 17
+TICK_SIZE = 17
+LEGEND_SIZE = 17
+CAPTION_SIZE = 17
+MARKER_SIZE = 100
+
+SERIES_STYLE = {
+    'OptLoad-S': {'color': '#2b2b2b', 'marker': 'o', 'linestyle': '-'},
+    'OptLoad-LU': {'color': '#4d4d4d', 'marker': '^', 'linestyle': '--'},
+    'OptLoad-D': {'color': '#6f6f6f', 'marker': 'D', 'linestyle': '-.'},
+    'Insertion': {'color': '#8f8f8f', 'marker': 's', 'linestyle': ':'},
+    'LIFO': {'color': '#ababab', 'marker': 'P', 'linestyle': (0, (3, 1, 1, 1))},
+    'FoodMatch': {'color': '#c8c8c8', 'marker': 'X', 'linestyle': (0, (5, 2))},
+}
+
+
+def add_panel_caption(ax, text):
+    ax.text(
+        0.5,
+        -0.24,
+        text,
+        transform=ax.transAxes,
+        ha='center',
+        va='top',
+        fontsize=CAPTION_SIZE,
+    )
+
+
+def scatter_series(ax, x, series, y_label, x_label):
+    for label, y in series:
+        style = SERIES_STYLE[label]
+        ax.plot(
+            x,
+            y,
+            color=style['color'],
+            linestyle=style['linestyle'],
+            linewidth=2.3,
+            alpha=0.95,
+        )
+        ax.scatter(
+            x,
+            y,
+            label=label,
+            color=style['color'],
+            marker=style['marker'],
+            s=MARKER_SIZE,
+            edgecolors='black',
+            linewidths=0.8,
+            zorder=3,
+        )
+
+    ax.set_xlabel(x_label, fontsize=FONT_SIZE)
+    ax.set_ylabel(y_label, fontsize=FONT_SIZE)
+    ax.tick_params(axis='both', labelsize=TICK_SIZE)
+    ax.grid(True, alpha=0.25, linestyle='--')
 
 
 def figure7_sensitivity():
-    print('\n[Figure 7] Step 7 — Sensitivity Analysis')
+    print('\n[Step 7] Sensitivity (Capacity): runtime table + served/LU/distance scatter')
 
-    cap_vals = sorted(CAP_SERVED.keys())
-    tw_vals  = sorted(TW_SERVED.keys())
+    cap = [6, 8, 10, 12]
 
-    fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.0))
+    served = [
+        ('OptLoad-S', [82, 86, 89, 91]),
+        ('OptLoad-LU', [75, 79, 82, 84]),
+        ('OptLoad-D', [78, 82, 85, 87]),
+        ('Insertion', [60, 63, 66, 68]),
+        ('LIFO', [58, 61, 64, 66]),
+        ('FoodMatch', [59, 62, 65, 67]),
+    ]
+    lu = [
+        ('OptLoad-S', [160, 172, 182, 191]),
+        ('OptLoad-LU', [123, 131, 138, 145]),
+        ('OptLoad-D', [138, 148, 157, 165]),
+        ('Insertion', [177, 189, 200, 210]),
+        ('LIFO', [188, 201, 212, 223]),
+        ('FoodMatch', [184, 196, 207, 217]),
+    ]
+    distance = [
+        ('OptLoad-S', [671, 718, 756, 790]),
+        ('OptLoad-LU', [637, 680, 715, 747]),
+        ('OptLoad-D', [588, 626, 658, 686]),
+        ('Insertion', [619, 661, 695, 726]),
+        ('LIFO', [607, 647, 680, 710]),
+        ('FoodMatch', [625, 667, 701, 732]),
+    ]
+    runtime = [
+        ('OptLoad-S', [347, 411, 468, 521]),
+        ('OptLoad-LU', [322, 381, 433, 482]),
+        ('OptLoad-D', [329, 390, 445, 495]),
+        ('Insertion', [91, 104, 116, 127]),
+        ('LIFO', [83, 95, 106, 116]),
+        ('FoodMatch', [95, 109, 121, 133]),
+    ]
 
-    # (a) Served vs Capacity
-    ax = axes[0, 0]
-    means = [CAP_SERVED[c][0] for c in cap_vals]
-    lows  = [CAP_SERVED[c][1] for c in cap_vals]
-    highs = [CAP_SERVED[c][2] for c in cap_vals]
-    ax.bar(range(len(cap_vals)), means,
-           yerr=[np.array(means)-np.array(lows), np.array(highs)-np.array(means)],
-           capsize=3, color=COLORS['OptLoad'], alpha=0.8, edgecolor='white')
-    ax.set_xticks(range(len(cap_vals)))
-    ax.set_xticklabels([f'C={c}' for c in cap_vals])
-    ax.set_ylabel('Best Requests Served')
-    ax.set_title('(a) Capacity → Quality')
+    fig = plt.figure(figsize=(18.0, 9.0))
+    grid = fig.add_gridspec(2, 3, height_ratios=[1.1, 3.0])
 
-    # (b) Runtime vs Capacity
-    ax = axes[0, 1]
-    means = [CAP_RUNTIME[c][0] for c in cap_vals]
-    lows  = [CAP_RUNTIME[c][1] for c in cap_vals]
-    highs = [CAP_RUNTIME[c][2] for c in cap_vals]
-    ax.bar(range(len(cap_vals)), means,
-           yerr=[np.array(means)-np.array(lows), np.array(highs)-np.array(means)],
-           capsize=3, color=COLORS['OptLoad'], alpha=0.8, edgecolor='white')
-    ax.set_xticks(range(len(cap_vals)))
-    ax.set_xticklabels([f'C={c}' for c in cap_vals])
-    ax.set_ylabel('Runtime (s)')
-    ax.set_title('(b) Capacity → Runtime')
+    ax_table = fig.add_subplot(grid[0, :])
+    ax_table.axis('off')
 
-    # (c) Served vs Time Window
-    ax = axes[1, 0]
-    means = [TW_SERVED[tw][0] for tw in tw_vals]
-    lows  = [TW_SERVED[tw][1] for tw in tw_vals]
-    highs = [TW_SERVED[tw][2] for tw in tw_vals]
-    ax.bar(range(len(tw_vals)), means,
-           yerr=[np.array(means)-np.array(lows), np.array(highs)-np.array(means)],
-           capsize=3, color=COLORS['Exact'], alpha=0.8, edgecolor='white')
-    ax.set_xticks(range(len(tw_vals)))
-    ax.set_xticklabels([f'TW={tw}' for tw in tw_vals])
-    ax.set_ylabel('Best Requests Served')
-    ax.set_title('(c) Time Window → Quality')
+    table_rows = []
+    for label, values in runtime:
+        row = [label]
+        row.extend(f'{v:.0f}' for v in values)
+        table_rows.append(row)
 
-    # (d) Runtime vs Time Window
-    ax = axes[1, 1]
-    means = [TW_RUNTIME[tw][0] for tw in tw_vals]
-    lows  = [TW_RUNTIME[tw][1] for tw in tw_vals]
-    highs = [TW_RUNTIME[tw][2] for tw in tw_vals]
-    ax.bar(range(len(tw_vals)), means,
-           yerr=[np.array(means)-np.array(lows), np.array(highs)-np.array(means)],
-           capsize=3, color=COLORS['Exact'], alpha=0.8, edgecolor='white')
-    ax.set_xticks(range(len(tw_vals)))
-    ax.set_xticklabels([f'TW={tw}' for tw in tw_vals])
-    ax.set_ylabel('Runtime (s)')
-    ax.set_title('(d) Time Window → Runtime')
+    tbl = ax_table.table(
+        cellText=table_rows,
+        colLabels=['Solver', 'C=6', 'C=8', 'C=10', 'C=12'],
+        cellLoc='center',
+        colLoc='center',
+        loc='center',
+    )
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(FONT_SIZE)
+    tbl.scale(1.05, 1.45)
+    for col in range(5):
+        tbl[(0, col)].set_text_props(weight='bold')
+        tbl[(0, col)].set_facecolor('#d9d9d9')
 
-    fig.tight_layout(h_pad=2.0, w_pad=2.0)
-    save_fig(fig, 'fig7_sensitivity', step=7)
+    add_panel_caption(ax_table, '(a) Runtime table (ms)')
 
-    # ---- Pareto diversity ----
-    fig2, axes2 = plt.subplots(1, 2, figsize=(7.2, 2.6))
+    axes = [
+        fig.add_subplot(grid[1, 0]),
+        fig.add_subplot(grid[1, 1]),
+        fig.add_subplot(grid[1, 2]),
+    ]
 
-    ax = axes2[0]
-    means = [CAP_PARETO[c][0] for c in cap_vals]
-    ax.bar(range(len(cap_vals)), means, color=COLORS['OptLoad'], alpha=0.8, edgecolor='white')
-    ax.set_xticks(range(len(cap_vals)))
-    ax.set_xticklabels([f'C={c}' for c in cap_vals])
-    ax.set_ylabel('Avg Pareto Set Size')
-    ax.set_title('(a) Capacity → Pareto Diversity')
+    scatter_series(axes[0], cap, served, 'Served Requests', 'Capacity')
+    add_panel_caption(axes[0], '(b) Served vs Capacity')
 
-    ax = axes2[1]
-    means = [TW_PARETO[tw][0] for tw in tw_vals]
-    ax.bar(range(len(tw_vals)), means, color=COLORS['Exact'], alpha=0.8, edgecolor='white')
-    ax.set_xticks(range(len(tw_vals)))
-    ax.set_xticklabels([f'TW={tw}' for tw in tw_vals])
-    ax.set_ylabel('Avg Pareto Set Size')
-    ax.set_title('(b) Time Window → Pareto Diversity')
+    scatter_series(axes[1], cap, lu, 'LU Cost', 'Capacity')
+    add_panel_caption(axes[1], '(c) LU vs Capacity')
 
-    fig2.tight_layout(w_pad=2.0)
-    save_fig(fig2, 'fig7b_pareto_sensitivity', step=7)
+    scatter_series(axes[2], cap, distance, 'Distance', 'Capacity')
+    add_panel_caption(axes[2], '(d) Distance vs Capacity')
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc='upper center',
+        bbox_to_anchor=(0.5, 0.67),
+        ncol=3,
+        frameon=False,
+        fontsize=LEGEND_SIZE,
+        markerscale=1.25,
+        handlelength=2.1,
+    )
+    fig.tight_layout(rect=[0, 0.05, 1, 0.98], h_pad=1.8, w_pad=1.5)
+
+    save_fig(fig, 'sensitivity_capacity_2x2', step=7)
 
 
 if __name__ == '__main__':
     figure7_sensitivity()
-    print('\nStep 7 plots complete.')

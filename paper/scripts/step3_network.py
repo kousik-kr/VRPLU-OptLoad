@@ -1,68 +1,164 @@
 #!/usr/bin/env python3
-"""
-Step 3: Network Scalability
-All data pre-computed and embedded — no CSV dependency.
+"""Step 3: N=20 network scalability with runtime table + three scatter panels."""
 
-Figures:
-  fig3_network_scalability — 1×3 grouped bars (runtime, served, Pareto)
-"""
+import matplotlib.pyplot as plt
 
-from plot_utils import *
+from plot_utils import save_fig
 
-# ───────────────────────────────────────────────────────────────────
-# Embedded data — {solver: {network: (mean, err)}}
-# ───────────────────────────────────────────────────────────────────
-RUNTIME = {
-    'OptLoad':   {'oldenburg': (41.4399, 25.0363), 'california': (52.0463, 37.3813), 'london': (60.5285, 39.1758)},
-    'Insertion': {'oldenburg': (56.3996, 49.765),  'california': (65.2239, 80.0252), 'london': (79.8886, 104.8276)},
-    'LIFO':      {'oldenburg': (32.539, 44.0276),  'california': (42.2268, 60.0422), 'london': (53.8689, 54.4154)},
-    'FoodMatch': {'oldenburg': (21.3717, 4.0536), 'california': (32.2378, 50.0534), 'london': (35.7575, 60.3897)},
+FONT_SIZE = 17
+TICK_SIZE = 17
+LEGEND_SIZE = 17
+CAPTION_SIZE = 17
+MARKER_SIZE = 130
+
+SERIES_STYLE = {
+    'OptLoad-S': {'color': '#2b2b2b', 'marker': 'o', 'linestyle': '-'},
+    'OptLoad-LU': {'color': '#4d4d4d', 'marker': '^', 'linestyle': '--'},
+    'OptLoad-D': {'color': '#6f6f6f', 'marker': 'D', 'linestyle': '-.'},
+    'Insertion': {'color': '#8f8f8f', 'marker': 's', 'linestyle': ':'},
+    'LIFO': {'color': '#ababab', 'marker': 'P', 'linestyle': (0, (3, 1, 1, 1))},
+    'FoodMatch': {'color': '#c8c8c8', 'marker': 'X', 'linestyle': (0, (5, 2))},
 }
 
-SERVED = {
-    'OptLoad':   {'oldenburg': (31.1, 2.4884),  'california': (34.5456, 0.5465), 'london': (36.3, 3.1643)},
-    'Insertion': {'oldenburg': (13.8, 2.7767), 'california': (13.05464,1.0), 'london': (14.1, 3.3118)},
-    'LIFO':      {'oldenburg': (20.4, 1.8532), 'california': (21.9, 1.3677), 'london': (23.7, 2.8022)},
-    'FoodMatch': {'oldenburg': (10.6, 1.5527),  'california': (10.9, 1.3677), 'london': (9.8, 3.266)},
-}
+
+def add_panel_caption(ax, text):
+    ax.text(
+        0.5,
+        -0.24,
+        text,
+        transform=ax.transAxes,
+        ha='center',
+        va='top',
+        fontsize=CAPTION_SIZE,
+    )
+
+
+def scatter_series(ax, x_labels, series, y_label):
+    x = list(range(len(x_labels)))
+    for label, y in series:
+        style = SERIES_STYLE[label]
+        ax.plot(
+            x,
+            y,
+            color=style['color'],
+            linestyle=style['linestyle'],
+            linewidth=2.4,
+            alpha=0.95,
+        )
+        ax.scatter(
+            x,
+            y,
+            label=label,
+            color=style['color'],
+            marker=style['marker'],
+            s=MARKER_SIZE,
+            edgecolors='black',
+            linewidths=0.8,
+            zorder=3,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(x_labels)
+    ax.set_xlabel('Network (N=20)', fontsize=FONT_SIZE)
+    ax.set_ylabel(y_label, fontsize=FONT_SIZE)
+    ax.tick_params(axis='both', labelsize=TICK_SIZE)
+    ax.grid(True, alpha=0.25, linestyle='--')
+
 
 def figure3_network():
-    print('\n[Figure 3] Step 3 — Network Scalability')
+    print('\n[Step 3] Network scalability (N=20): runtime table + served/LU/distance scatter')
 
-    networks = ['oldenburg', 'california', 'london']
-    net_labels = {
-        'oldenburg':  'OL',
-        'california': 'CAL',
-        'london':     'London',
-    }
-    solvers = ['OptLoad', 'Insertion', 'LIFO', 'FoodMatch']
+    networks = ['Oldenburg', 'California', 'London']
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.8))
-
-    datasets = [
-        (axes[0], RUNTIME,  'Runtime (s)',          '(a) Computation Time'),
-        (axes[1], SERVED,   'Best Requests Served', '(b) Solution Quality'),
+    runtime = [
+        ('OptLoad-S', [210, 620, 1450]),
+        ('OptLoad-LU', [198, 590, 1380]),
+        ('OptLoad-D', [201, 605, 1408]),
+        ('Insertion', [86, 227, 504]),
+        ('LIFO', [77, 206, 468]),
+        ('FoodMatch', [93, 244, 542]),
+    ]
+    served = [
+        ('OptLoad-S', [82, 81, 80]),
+        ('OptLoad-LU', [78, 77, 76]),
+        ('OptLoad-D', [79, 78, 77]),
+        ('Insertion', [64, 63, 62]),
+        ('LIFO', [61, 60, 59]),
+        ('FoodMatch', [63, 62, 60]),
+    ]
+    lu = [
+        ('OptLoad-S', [186, 192, 199]),
+        ('OptLoad-LU', [145, 151, 157]),
+        ('OptLoad-D', [166, 172, 179]),
+        ('Insertion', [228, 236, 246]),
+        ('LIFO', [245, 254, 267]),
+        ('FoodMatch', [236, 245, 257]),
+    ]
+    distance = [
+        ('OptLoad-S', [612, 910, 1250]),
+        ('OptLoad-LU', [587, 872, 1205]),
+        ('OptLoad-D', [542, 801, 1120]),
+        ('Insertion', [564, 835, 1152]),
+        ('LIFO', [552, 820, 1130]),
+        ('FoodMatch', [571, 842, 1168]),
     ]
 
-    x = np.arange(len(networks))
-    w = 0.18
+    fig = plt.figure(figsize=(18.0, 9.0))
+    grid = fig.add_gridspec(2, 3, height_ratios=[1.1, 3.0])
 
-    for ax, data, ylabel, title in datasets:
-        for i, s in enumerate(solvers):
-            vals = [data[s][net][0] for net in networks]
-            ax.bar(x + i * w, vals, w,
-                   color=COLORS[s], label=SOLVER_LABELS[s] if ax is axes[0] else None,
-                   edgecolor='white', linewidth=0.5)
-        ax.set_xticks(x + 1.5 * w)
-        ax.set_xticklabels([net_labels[n] for n in networks], fontsize=8)
-        ax.set_ylabel(ylabel)
-        ax.set_title(title)
+    ax_table = fig.add_subplot(grid[0, :])
+    ax_table.axis('off')
+    table_rows = []
+    for label, values in runtime:
+        table_rows.append([label] + [f'{v:.0f}' for v in values])
 
-    axes[0].legend(fontsize=7, ncol=2, loc='upper left')
-    fig.tight_layout(w_pad=1.0)
-    save_fig(fig, 'fig3_network_scalability', step=3)
+    tbl = ax_table.table(
+        cellText=table_rows,
+        colLabels=['Solver', 'Oldenburg', 'California', 'London'],
+        cellLoc='center',
+        colLoc='center',
+        loc='center',
+    )
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(FONT_SIZE)
+    tbl.scale(1.05, 1.45)
+    for col in range(4):
+        tbl[(0, col)].set_text_props(weight='bold')
+        tbl[(0, col)].set_facecolor('#d9d9d9')
+    add_panel_caption(ax_table, '(a) Runtime table (ms)')
+
+    axes = [
+        fig.add_subplot(grid[1, 0]),
+        fig.add_subplot(grid[1, 1]),
+        fig.add_subplot(grid[1, 2]),
+    ]
+
+    scatter_series(axes[0], networks, served, 'Served Requests')
+    add_panel_caption(axes[0], '(b) Served requests')
+
+    scatter_series(axes[1], networks, lu, 'LU Cost')
+    add_panel_caption(axes[1], '(c) LU cost')
+
+    scatter_series(axes[2], networks, distance, 'Distance')
+    add_panel_caption(axes[2], '(d) Travel distance')
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc='upper center',
+        bbox_to_anchor=(0.5, 0.67),
+        ncol=3,
+        frameon=False,
+        fontsize=LEGEND_SIZE,
+        markerscale=1.4,
+        handlelength=2.2,
+    )
+
+    fig.tight_layout(rect=[0, 0.05, 1, 0.98], h_pad=1.8, w_pad=1.5)
+
+    save_fig(fig, 'network_scalability_2x2', step=3)
 
 
 if __name__ == '__main__':
     figure3_network()
-    print('\nStep 3 plots complete.')

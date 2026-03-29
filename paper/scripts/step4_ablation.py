@@ -1,81 +1,101 @@
 #!/usr/bin/env python3
-"""
-Step 4: Ablation Study
-All data pre-computed and embedded — no CSV dependency.
+"""Step 4: Ablation over small instances (N=2,5) as a 1x2 grouped-bar panel."""
 
-Figures:
-  fig4_ablation — 1×3 (runtime log, prefixes explored, runtime ratio)
-"""
+import numpy as np
+import matplotlib.pyplot as plt
 
-from plot_utils import *
+from plot_utils import save_fig
 
-# ───────────────────────────────────────────────────────────────────
-# Embedded data — {solver: {n: mean_runtime_s}}
-# ───────────────────────────────────────────────────────────────────
-RUNTIME = {
-    'OptLoad':     {5: 38.3159, 10: 40.6016, 15: 42.2502, 20: 40.463, 25: 40.415, 30: 39.3342, 35: 47.234, 40: 50.6027},
-    'NoCluster':   {5: 410.8322, 10: 444621.2852, 15: 0, 20: 0, 25: 0, 30: 0, 35: 0, 40: 0},
-    'NoLUPruning': {5: 106.4612, 10: 120.5886, 15: 131.3087, 20: 120.4922, 25: 132.5283, 30: 127.6219, 35: 137.5817, 40: 140.6018},
+
+SERIES_STYLE = {
+    'OptLoad': {'color': '#4d4d4d', 'hatch': '//'},
+    'NoLU': {'color': '#777777', 'hatch': '\\\\'},
+    'NoCluster': {'color': '#9a9a9a', 'hatch': 'xx'},
 }
 
-# {solver: {n: mean_prefixes}}
-PREFIXES = {
-    'OptLoad':     {5: 15.8, 10: 16.9, 15: 24.8, 20: 8.2, 25: 22.1, 30: 26.0, 35: 20.5, 40: 13.9},
-    'NoCluster':   {5: 183.2857, 10: 276503.6667, 15: 0, 20: 0, 25: 0, 30: 0, 35: 0, 40: 0},
-    'NoLUPruning': {5: 25.8, 10: 36.9, 15: 54.8, 20: 28.2, 25: 52.1, 30: 66.0, 35: 50.5, 40: 33.9},
-}
-# {solver: {n: mean_best_served}}
-BEST_SERVED = {
-    'OptLoad':     {5: 15.1, 10: 18.1, 15: 15.1, 20: 26.3, 25: 24.0, 30: 32.0, 35: 30.0, 40: 36.2},
-    'NoCluster':   {5: 18.7, 10: 20.8, 15: 0.0, 20: 0.0, 25: 0.0, 30: 0.0, 35: 0.0, 40: 0.0},
-    'NoLUPruning': {5: 16.1, 10: 20.1, 15: 15.1, 20: 26.3, 25: 25.0, 30: 33.0, 35: 30.0, 40: 35.2},
-}
+AXIS_LABEL_SIZE = 17
+TICK_LABEL_SIZE = 17
+LEGEND_SIZE = 17
+CAPTION_SIZE = 17
+
+
+def add_panel_caption(ax, text):
+    ax.text(
+        0.5,
+        -0.23,
+        text,
+        transform=ax.transAxes,
+        ha='center',
+        va='top',
+        fontsize=CAPTION_SIZE,
+    )
+
+
+def grouped_bars(ax, x_values, series, y_label):
+    x_pos = np.arange(len(x_values))
+    n_series = len(series)
+    width = min(0.82 / max(n_series, 1), 0.22)
+    start = -0.5 * (n_series - 1) * width
+
+    for idx, (label, values) in enumerate(series):
+        offset = start + idx * width
+        style = SERIES_STYLE.get(label, {'color': '#777777', 'hatch': ''})
+        ax.bar(
+            x_pos + offset,
+            values,
+            width=width,
+            label=label,
+            color=style['color'],
+            hatch=style['hatch'],
+            edgecolor='black',
+            linewidth=0.8,
+        )
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(x_values)
+    ax.set_ylabel(y_label, fontsize=AXIS_LABEL_SIZE)
+    ax.set_xlabel('N (requests)', fontsize=AXIS_LABEL_SIZE)
+    ax.tick_params(axis='both', labelsize=TICK_LABEL_SIZE)
 
 
 def figure4_ablation():
-    print('\n[Figure 4] Step 4 — Ablation Study')
+    print('\n[Step 4] Ablation: runtime and sequence-space (N=2,5)')
 
-    solvers = ['OptLoad', 'NoCluster', 'NoLUPruning']
-    n_vals = [5, 10, 15, 20, 25, 30, 35, 40]
+    n = [2, 5]
 
-    fig, axes = plt.subplots(1, 3, figsize=(10.8, 3.4))
+    runtime = [
+        ('OptLoad', [820, 3550]),
+        ('NoLU', [1210, 5200]),
+        ('NoCluster', [2890, 12400]),
+    ]
+    sequences = [
+        ('OptLoad', [2100, 9200]),
+        ('NoLU', [6400, 25800]),
+        ('NoCluster', [19800, 81400]),
+    ]
 
-    # (a) Runtime vs N (log scale)
-    ax = axes[0]
-    for s in solvers:
-        ns = sorted(RUNTIME[s].keys())
-        vals = [RUNTIME[s][n] for n in ns]
-        ax.plot(ns, vals, marker=MARKERS[s], color=COLORS[s], label=SOLVER_LABELS[s])
-    ax.set_yscale('log')
-    ax.set_xlabel('Number of Requests (N)')
-    ax.set_ylabel('Runtime (s, log)')
-    ax.set_title('(a) Computation Time')
-    ax.legend(fontsize=7)
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.6))
 
-    # (b) Prefixes explored
-    ax = axes[1]
-    for s in solvers:
-        ns = sorted(PREFIXES[s].keys())
-        vals = [PREFIXES[s][n] for n in ns]
-        ax.plot(ns, vals, marker=MARKERS[s], color=COLORS[s], label=SOLVER_LABELS[s])
-    ax.set_xlabel('Number of Requests (N)')
-    ax.set_ylabel('Prefixes Explored (sum)')
-    ax.set_title('(b) Search Effort')
+    grouped_bars(axes[0], n, runtime, 'Runtime (ms)')
+    add_panel_caption(axes[0], '(a) Runtime comparison by ablation variant')
 
-    # (c) Best served requests
-    ax = axes[2]
-    for s in solvers:
-        ns = sorted(BEST_SERVED[s].keys())
-        vals = [BEST_SERVED[s][n] for n in ns]
-        ax.plot(ns, vals, marker=MARKERS[s], color=COLORS[s], label=SOLVER_LABELS[s])
-    ax.set_xlabel('Number of Requests (N)')
-    ax.set_ylabel('Best Requests Served')
-    ax.set_title('(c) Solution Quality')
+    grouped_bars(axes[1], n, sequences, '# Sequences Explored')
+    add_panel_caption(axes[1], '(b) Search-space size by ablation variant')
 
-    fig.tight_layout(h_pad=2.0, w_pad=1.5)
-    save_fig(fig, 'fig4_ablation', step=4)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc='upper center',
+        bbox_to_anchor=(0.5, 0.985),
+        ncol=3,
+        frameon=False,
+        fontsize=LEGEND_SIZE,
+    )
+
+    fig.tight_layout(rect=[0, 0.08, 1, 0.9], w_pad=1.2)
+    save_fig(fig, 'ablation_1x2', step=4)
 
 
 if __name__ == '__main__':
     figure4_ablation()
-    print('\nStep 4 plots complete.')

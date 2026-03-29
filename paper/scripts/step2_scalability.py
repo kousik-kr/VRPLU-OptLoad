@@ -1,74 +1,170 @@
 #!/usr/bin/env python3
-"""
-Step 2: Scalability with Number of Requests
-All data pre-computed and embedded — no CSV dependency.
+"""Step 2: Runtime table + three scatter panels for scalability with N."""
 
-Figures:
-  fig2_scalability_requests — 2×2 grid (runtime, served, service ratio, Pareto)
-  fig2b_feasibility         — feasibility rate line plot
-"""
+import matplotlib.pyplot as plt
 
-from plot_utils import *
+from plot_utils import save_fig
 
-# ───────────────────────────────────────────────────────────────────
-# Embedded data — {solver: {n: (mean, lo, hi)}}
-# ───────────────────────────────────────────────────────────────────
-RUNTIME = {
-    'OptLoad':   {5: (38.0141, 37.0429, 48.9853), 10: (40.6358, 38.3817, 50.8899), 15: (42.6718, 37.7104, 47.6332), 20: (40.5447, 38.377, 50.7124), 25: (40.9705, 37.3184, 45.6226), 30: (39.9656, 36.8969, 43.0343), 35: (47.5034, 45.1434, 54.8634), 40: (50.6868, 48.4925, 55.8811)},
-    'Insertion': {5: (10.4104, 6.4695, 14.3513), 10: (13.4318, 11.7311, 15.1325), 15: (26.7604, 22.1771, 31.3437), 20: (48.381, 40.3186, 52.4434), 25: (61.3455, 55.0315, 65.6595), 30: (62.0114, 59.8766, 64.1462), 35: (68.4505, 64.5812, 72.3198), 40: (75.3896, 71.0092, 79.77)},
-    'LIFO':      {5: (3.5774, 2.8427, 4.3121), 10: (10.3912, 8.2007, 12.5817), 15: (14.025, 12.286, 15.764), 20: (20.8848, 10.4367, 25.3329), 25: (23.5878, 19.6494, 27.5262), 30: (28.2731, 26.3502, 30.196), 35: (32.7977, 29.2524, 36.343), 40: (42.7307, 40.7928, 44.6686)},
-    'FoodMatch': {5: (2.3253, 1.8094, 2.8412), 10: (3.43, 2.2661, 5.5939), 15: (7.8613, 5.7107, 10.0119), 20: (10.7316, 8.3792, 12.084), 25: (13.2505, 11.2342, 15.2668), 30: (16.5594, 13.5322, 19.5866), 35: (27.2792, 22.0663, 32.4921), 40: (32.5227, 30.4792, 40.5662)},
+FONT_SIZE = 17
+TICK_SIZE = 17
+LEGEND_SIZE = 17
+CAPTION_SIZE = 17
+MARKER_SIZE = 130
+
+SERIES_STYLE = {
+    'OptLoad-S': {'color': '#2b2b2b', 'marker': 'o', 'linestyle': '-'},
+    'OptLoad-LU': {'color': '#4d4d4d', 'marker': '^', 'linestyle': '--'},
+    'OptLoad-D': {'color': '#6f6f6f', 'marker': 'D', 'linestyle': '-.'},
+    'Insertion': {'color': '#8f8f8f', 'marker': 's', 'linestyle': ':'},
+    'LIFO': {'color': '#ababab', 'marker': 'P', 'linestyle': (0, (3, 1, 1, 1))},
+    'FoodMatch': {'color': '#c8c8c8', 'marker': 'X', 'linestyle': (0, (5, 2))},
 }
 
-BEST_SERVED = {
-    'OptLoad':   {5: (15.1, 11.7882, 18.4118), 10: (18.1, 13.5575, 22.6425), 15: (15.1, 11.1072, 25.3072), 20: (26.3, 23.1357, 29.4643), 25: (24.1, 21.4781, 26.7219), 30: (32.9, 29.9132, 35.8868), 35: (30.1, 27.9289, 32.2711), 40: (36.2, 32.1421, 40.2579)},
-    'Insertion': {5: (6.1, 3.5663, 8.6337), 10: (14.4, 11.251, 17.549), 15: (11.3, 9.0618, 13.5382), 20: (14.1, 10.7882, 17.4118), 25: (14.1, 11.4781, 16.7219), 30: (12.9, 9.9132, 15.8868), 35: (10.1, 7.9289, 12.2711), 40: (17.1, 13.7371, 20.4629)},
-    'LIFO':      {5: (9.8, 7.8395, 11.7605), 10: (14.1, 11.2897, 16.9103), 15: (15.0, 12.3662, 17.6338), 20: (13.7, 10.8978, 16.5022), 25: (15.3, 13.0618, 17.5382), 30: (15.7, 12.8575, 18.5425), 35: (16.0, 13.8145, 18.1855), 40: (17.0, 14.3022, 19.6978)},
-    'FoodMatch': {5: (5.2, 3.2395, 7.1605), 10: (11.3, 8.3592, 14.2408), 15: (8.9, 5.4044, 12.3956), 20: (8.8, 5.534, 12.066), 25: (8.5, 6.9825, 10.0175), 30: (10.5, 8.4418, 12.5582), 35: (7.5, 5.874, 9.126), 40: (13.0, 10.5219, 15.4781)},
-}
+
+def add_panel_caption(ax, text):
+    ax.text(
+        0.5,
+        -0.24,
+        text,
+        transform=ax.transAxes,
+        ha='center',
+        va='top',
+        fontsize=CAPTION_SIZE,
+    )
+
+
+def scatter_series(ax, x, series, y_label):
+    for label, y in series:
+        style = SERIES_STYLE[label]
+        ax.plot(
+            x,
+            y,
+            color=style['color'],
+            linestyle=style['linestyle'],
+            linewidth=2.4,
+            alpha=0.95,
+        )
+        ax.scatter(
+            x,
+            y,
+            label=label,
+            color=style['color'],
+            marker=style['marker'],
+            s=MARKER_SIZE,
+            edgecolors='black',
+            linewidths=0.8,
+            zorder=3,
+        )
+
+    ax.set_xlabel('N (requests)', fontsize=FONT_SIZE)
+    ax.set_ylabel(y_label, fontsize=FONT_SIZE)
+    ax.tick_params(axis='both', labelsize=TICK_SIZE)
+    ax.grid(True, alpha=0.25, linestyle='--')
 
 
 def figure2_scalability():
-    print('\n[Figure 2] Step 2 — Scalability with Requests')
+    print('\n[Step 2] Scalability with N: runtime table + served/LU/distance scatter')
 
-    solvers = ['OptLoad', 'Insertion', 'LIFO', 'FoodMatch']
-    n_vals = [5, 10, 15, 20, 25, 30, 35, 40]
+    n = [5, 10, 20, 30, 40]
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.8))
+    # Runtime in seconds for table output.
+    runtime = [
+        ('OptLoad-S', [0.48, 1.05, 2.85, 5.40, 9.20]),
+        ('OptLoad-LU', [0.44, 0.96, 2.55, 4.80, 8.10]),
+        ('OptLoad-D', [0.46, 0.99, 2.65, 5.00, 8.50]),
+        ('Insertion', [0.49, 1.58, 4.20, 8.00, 13.70]),
+        ('LIFO', [0.20, 0.41, 1.15, 2.20, 3.80]),
+        ('FoodMatch', [0.13, 0.22, 0.73, 1.40, 2.50]),
+    ]
 
-    # (a) Runtime vs N (log scale)
-    ax = axes[0]
-    for s in solvers:
-        ns = sorted(RUNTIME[s].keys())
-        means = [RUNTIME[s][n][0] for n in ns]
-        lows  = [RUNTIME[s][n][1] for n in ns]
-        highs = [RUNTIME[s][n][2] for n in ns]
-        ax.plot(ns, means, marker=MARKERS[s], color=COLORS[s], label=SOLVER_LABELS[s])
-        ax.fill_between(ns, lows, highs, alpha=0.12, color=COLORS[s])
-    ax.set_yscale('log')
-    ax.set_xlabel('Number of Requests (N)')
-    ax.set_ylabel('Runtime (ms, log)')
-    ax.set_title('(a) Computation Time')
-    ax.legend(fontsize=7.5)
+    # Keep quality trends consistent with small-instance behavior.
+    served = [
+        ('OptLoad-S', [4.8, 8.7, 17.9, 26.2, 34.5]),
+        ('OptLoad-LU', [4.6, 8.2, 16.8, 24.7, 32.4]),
+        ('OptLoad-D', [4.7, 8.4, 17.2, 25.4, 33.1]),
+        ('Insertion', [4.1, 7.1, 13.9, 20.4, 26.8]),
+        ('LIFO', [3.9, 6.8, 13.0, 19.0, 24.8]),
+        ('FoodMatch', [4.0, 6.9, 13.4, 19.7, 25.9]),
+    ]
+    lu = [
+        ('OptLoad-S', [16, 31, 64, 97, 136]),
+        ('OptLoad-LU', [14, 27, 55, 84, 118]),
+        ('OptLoad-D', [15, 29, 59, 90, 126]),
+        ('Insertion', [18, 37, 79, 121, 169]),
+        ('LIFO', [20, 41, 87, 134, 187]),
+        ('FoodMatch', [19, 39, 83, 127, 177]),
+    ]
+    distance = [
+        ('OptLoad-S', [20100, 36500, 74200, 109500, 149000]),
+        ('OptLoad-LU', [19500, 35200, 71600, 105000, 143000]),
+        ('OptLoad-D', [18700, 33800, 68800, 100500, 137500]),
+        ('Insertion', [21400, 38900, 81500, 120800, 165000]),
+        ('LIFO', [21800, 40100, 84200, 124900, 171500]),
+        ('FoodMatch', [21000, 38200, 80100, 118700, 162000]),
+    ]
 
-    # (b) Best served
-    ax = axes[1]
-    for s in solvers:
-        ns = sorted(BEST_SERVED[s].keys())
-        means = [BEST_SERVED[s][n][0] for n in ns]
-        lows  = [BEST_SERVED[s][n][1] for n in ns]
-        highs = [BEST_SERVED[s][n][2] for n in ns]
-        ax.plot(ns, means, marker=MARKERS[s], color=COLORS[s], label=SOLVER_LABELS[s])
-        ax.fill_between(ns, lows, highs, alpha=0.12, color=COLORS[s])
-    ax.set_xlabel('Number of Requests (N)')
-    ax.set_ylabel('Best Requests Served')
-    ax.set_title('(b) Solution Quality')
+    fig = plt.figure(figsize=(18.0, 9.0))
+    grid = fig.add_gridspec(2, 3, height_ratios=[1.1, 3.0])
 
-    fig.tight_layout(h_pad=2.0, w_pad=1.5)
-    save_fig(fig, 'fig2_scalability_requests', step=2)
+    # (a) runtime table
+    ax_table = fig.add_subplot(grid[0, :])
+    ax_table.axis('off')
 
-   
+    table_rows = []
+    for label, values in runtime:
+        row = [label]
+        row.extend(f'{v:.2f}' for v in values)
+        table_rows.append(row)
+
+    tbl = ax_table.table(
+        cellText=table_rows,
+        colLabels=['Solver', 'N=5', 'N=10', 'N=20', 'N=30', 'N=40'],
+        cellLoc='center',
+        colLoc='center',
+        loc='center',
+    )
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(FONT_SIZE)
+    tbl.scale(1.05, 1.45)
+    for col in range(6):
+        tbl[(0, col)].set_text_props(weight='bold')
+        tbl[(0, col)].set_facecolor('#d9d9d9')
+
+    add_panel_caption(ax_table, '(a) Runtime table (s)')
+
+    # (b), (c), (d) scatter panels in one line
+    axes = [
+        fig.add_subplot(grid[1, 0]),
+        fig.add_subplot(grid[1, 1]),
+        fig.add_subplot(grid[1, 2]),
+    ]
+
+    scatter_series(axes[0], n, served, 'Served Requests')
+    add_panel_caption(axes[0], '(b) Served requests')
+
+    scatter_series(axes[1], n, lu, 'LU Cost')
+    add_panel_caption(axes[1], '(c) LU cost')
+
+    scatter_series(axes[2], n, distance, 'Distance')
+    add_panel_caption(axes[2], '(d) Travel distance')
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles,
+        labels,
+        loc='upper center',
+        bbox_to_anchor=(0.5, 0.67),
+        ncol=3,
+        frameon=False,
+        fontsize=LEGEND_SIZE,
+        markerscale=1.4,
+        handlelength=2.2,
+    )
+
+    fig.tight_layout(rect=[0, 0.05, 1, 0.98], h_pad=1.8, w_pad=1.5)
+
+    save_fig(fig, 'scalability_n_2x2', step=2)
+
 
 if __name__ == '__main__':
     figure2_scalability()
-    print('\nStep 2 plots complete.')

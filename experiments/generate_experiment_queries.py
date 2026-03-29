@@ -6,7 +6,7 @@ Experiments:
   Step 1: Core comparison (Oldenburg, N=2,5,10)
   Step 2: Scalability with requests (London, N=10,20,40,60,80) — reuse existing
   Step 3: Network scalability (Oldenburg, California, London, N=20)
-  Step 4: Ablation study (London, N=20,40,60) — reuse existing
+    Step 4: Ablation study (London, N=2,5)
   Step 5: Search space reduction (London, N=10,18,26,34,42,50,58,66,74)
   Step 6: Parallel performance (London, N=60) — reuse existing
   Step 7A: Capacity sensitivity (London, N=20, C=6,8,10,12)
@@ -286,11 +286,10 @@ def main():
     print(f"  London N=20: reusing existing ({existing.get(20, 0)} queries)")
 
     # =========================================================
-    # STEP 4: Ablation study (London, N=20,40,60)
-    # Reuse existing
+    # STEP 4: Ablation study (London, N=2,5)
     # =========================================================
     print("\n--- STEP 4: Ablation Study (London) ---")
-    for n in [20, 40, 60]:
+    for n in [2, 5]:
         if n in existing:
             print(f"  Reusing existing queries for N={n}")
         else:
