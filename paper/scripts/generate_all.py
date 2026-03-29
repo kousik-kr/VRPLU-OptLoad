@@ -21,7 +21,7 @@ def main():
         for arg in sys.argv[1:]:
             steps.append(int(arg))
     else:
-        steps = [1, 2, 3, 4, 6, 7]
+        steps = [1, 2, 3, 4, 6]
 
     print("=" * 60)
     print("Generating grouped publication plots (22 panels total)")

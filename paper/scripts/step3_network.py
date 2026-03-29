@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 3: N=20 network scalability with runtime table + three scatter panels."""
+"""Step 3: N=20 network scalability with three 1x3 scatter panels."""
 
 import matplotlib.pyplot as plt
 
@@ -66,18 +66,10 @@ def scatter_series(ax, x_labels, series, y_label):
 
 
 def figure3_network():
-    print('\n[Step 3] Network scalability (N=20): runtime table + served/LU/distance scatter')
+    print('\n[Step 3] Network scalability (N=20): served/LU/distance scatter')
 
     networks = ['Oldenburg', 'California', 'London']
 
-    runtime = [
-        ('OptLoad-S', [210, 620, 1450]),
-        ('OptLoad-LU', [198, 590, 1380]),
-        ('OptLoad-D', [201, 605, 1408]),
-        ('Insertion', [86, 227, 504]),
-        ('LIFO', [77, 206, 468]),
-        ('FoodMatch', [93, 244, 542]),
-    ]
     served = [
         ('OptLoad-S', [82, 81, 80]),
         ('OptLoad-LU', [78, 77, 76]),
@@ -103,61 +95,33 @@ def figure3_network():
         ('FoodMatch', [571, 842, 1168]),
     ]
 
-    fig = plt.figure(figsize=(18.0, 9.0))
-    grid = fig.add_gridspec(2, 3, height_ratios=[1.1, 3.0])
-
-    ax_table = fig.add_subplot(grid[0, :])
-    ax_table.axis('off')
-    table_rows = []
-    for label, values in runtime:
-        table_rows.append([label] + [f'{v:.0f}' for v in values])
-
-    tbl = ax_table.table(
-        cellText=table_rows,
-        colLabels=['Solver', 'Oldenburg', 'California', 'London'],
-        cellLoc='center',
-        colLoc='center',
-        loc='center',
-    )
-    tbl.auto_set_font_size(False)
-    tbl.set_fontsize(FONT_SIZE)
-    tbl.scale(1.05, 1.45)
-    for col in range(4):
-        tbl[(0, col)].set_text_props(weight='bold')
-        tbl[(0, col)].set_facecolor('#d9d9d9')
-    add_panel_caption(ax_table, '(a) Runtime table (ms)')
-
-    axes = [
-        fig.add_subplot(grid[1, 0]),
-        fig.add_subplot(grid[1, 1]),
-        fig.add_subplot(grid[1, 2]),
-    ]
+    fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6))
 
     scatter_series(axes[0], networks, served, 'Served Requests')
-    add_panel_caption(axes[0], '(b) Served requests')
+    add_panel_caption(axes[0], '(a) Served requests')
 
     scatter_series(axes[1], networks, lu, 'LU Cost')
-    add_panel_caption(axes[1], '(c) LU cost')
+    add_panel_caption(axes[1], '(b) LU cost')
 
     scatter_series(axes[2], networks, distance, 'Distance')
-    add_panel_caption(axes[2], '(d) Travel distance')
+    add_panel_caption(axes[2], '(c) Travel distance')
 
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(
         handles,
         labels,
         loc='upper center',
-        bbox_to_anchor=(0.5, 0.67),
-        ncol=3,
+        bbox_to_anchor=(0.5, 0.985),
+        ncol=4,
         frameon=False,
         fontsize=LEGEND_SIZE,
         markerscale=1.4,
         handlelength=2.2,
     )
 
-    fig.tight_layout(rect=[0, 0.05, 1, 0.98], h_pad=1.8, w_pad=1.5)
+    fig.tight_layout(rect=[0, 0.08, 1, 0.9], w_pad=1.2)
 
-    save_fig(fig, 'network_scalability_2x2', step=3)
+    save_fig(fig, 'network_scalability', step=3)
 
 
 if __name__ == '__main__':

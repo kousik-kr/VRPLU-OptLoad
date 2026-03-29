@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 2: Runtime table + three scatter panels for scalability with N."""
+"""Step 2: Three 1x3 scatter panels for scalability with N."""
 
 import matplotlib.pyplot as plt
 
@@ -63,19 +63,9 @@ def scatter_series(ax, x, series, y_label):
 
 
 def figure2_scalability():
-    print('\n[Step 2] Scalability with N: runtime table + served/LU/distance scatter')
+    print('\n[Step 2] Scalability with N: served/LU/distance scatter')
 
     n = [5, 10, 20, 30, 40]
-
-    # Runtime in seconds for table output.
-    runtime = [
-        ('OptLoad-S', [0.48, 1.05, 2.85, 5.40, 9.20]),
-        ('OptLoad-LU', [0.44, 0.96, 2.55, 4.80, 8.10]),
-        ('OptLoad-D', [0.46, 0.99, 2.65, 5.00, 8.50]),
-        ('Insertion', [0.49, 1.58, 4.20, 8.00, 13.70]),
-        ('LIFO', [0.20, 0.41, 1.15, 2.20, 3.80]),
-        ('FoodMatch', [0.13, 0.22, 0.73, 1.40, 2.50]),
-    ]
 
     # Keep quality trends consistent with small-instance behavior.
     served = [
@@ -103,67 +93,33 @@ def figure2_scalability():
         ('FoodMatch', [21000, 38200, 80100, 118700, 162000]),
     ]
 
-    fig = plt.figure(figsize=(18.0, 9.0))
-    grid = fig.add_gridspec(2, 3, height_ratios=[1.1, 3.0])
-
-    # (a) runtime table
-    ax_table = fig.add_subplot(grid[0, :])
-    ax_table.axis('off')
-
-    table_rows = []
-    for label, values in runtime:
-        row = [label]
-        row.extend(f'{v:.2f}' for v in values)
-        table_rows.append(row)
-
-    tbl = ax_table.table(
-        cellText=table_rows,
-        colLabels=['Solver', 'N=5', 'N=10', 'N=20', 'N=30', 'N=40'],
-        cellLoc='center',
-        colLoc='center',
-        loc='center',
-    )
-    tbl.auto_set_font_size(False)
-    tbl.set_fontsize(FONT_SIZE)
-    tbl.scale(1.05, 1.45)
-    for col in range(6):
-        tbl[(0, col)].set_text_props(weight='bold')
-        tbl[(0, col)].set_facecolor('#d9d9d9')
-
-    add_panel_caption(ax_table, '(a) Runtime table (s)')
-
-    # (b), (c), (d) scatter panels in one line
-    axes = [
-        fig.add_subplot(grid[1, 0]),
-        fig.add_subplot(grid[1, 1]),
-        fig.add_subplot(grid[1, 2]),
-    ]
+    fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6))
 
     scatter_series(axes[0], n, served, 'Served Requests')
-    add_panel_caption(axes[0], '(b) Served requests')
+    add_panel_caption(axes[0], '(a) Served requests')
 
     scatter_series(axes[1], n, lu, 'LU Cost')
-    add_panel_caption(axes[1], '(c) LU cost')
+    add_panel_caption(axes[1], '(b) LU cost')
 
     scatter_series(axes[2], n, distance, 'Distance')
-    add_panel_caption(axes[2], '(d) Travel distance')
+    add_panel_caption(axes[2], '(c) Travel distance')
 
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(
         handles,
         labels,
         loc='upper center',
-        bbox_to_anchor=(0.5, 0.67),
-        ncol=3,
+        bbox_to_anchor=(0.5, 0.985),
+        ncol=4,
         frameon=False,
         fontsize=LEGEND_SIZE,
         markerscale=1.4,
         handlelength=2.2,
     )
 
-    fig.tight_layout(rect=[0, 0.05, 1, 0.98], h_pad=1.8, w_pad=1.5)
+    fig.tight_layout(rect=[0, 0.08, 1, 0.9], w_pad=1.2)
 
-    save_fig(fig, 'scalability_n_2x2', step=2)
+    save_fig(fig, 'scalability_n', step=2)
 
 
 if __name__ == '__main__':
