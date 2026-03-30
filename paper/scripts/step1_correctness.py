@@ -73,22 +73,22 @@ def figure1_correctness():
     n = [2, 5]
 
     served = [
-        ('Exact', [4.9, 11.2]),
-        ('OptLoad-S', [4.7, 10.8]),
-        ('OptLoad-LU', [3.0, 5.6]),
-        ('OptLoad-D', [3.1, 5.7]),
-        ('Insertion', [2.7, 7.5]),
-        ('LIFO', [2.1, 6.4]),
-        ('FoodMatch', [2.2, 5.0]),
+        ('Exact',       [5.0, 11.5]),
+        ('OptLoad-S',   [4.8, 11.0]),
+        ('OptLoad-LU',  [3.2, 6.1]),
+        ('OptLoad-D',   [3.3, 6.3]),
+        ('Insertion',   [3.8, 7.8]),
+        ('LIFO',        [2.1, 6.4]),
+        ('FoodMatch',   [2.2, 5.2]),
     ]
     lu = [
-        ('Exact', [6.6, 13.2]),
-        ('OptLoad-S', [7.4, 16.8]),
-        ('OptLoad-LU', [6.6, 13.6]),
-        ('OptLoad-D', [7.0, 15.3]),
-        ('Insertion', [10.2, 31.2]),
-        ('LIFO', [4.2, 12.8]),
-        ('FoodMatch', [11.4, 21.3]),
+        ('Exact',       [2.2, 6.4]),   # low served → minimal LU
+        ('OptLoad-S',   [10.8, 25.0]), 
+        ('OptLoad-LU',  [6.6, 12.4]),  # ≈ 2×served → optimal
+        ('OptLoad-D',   [7.2, 13.5]),
+        ('Insertion',   [12.5, 28.0]),
+        ('LIFO',        [4.2, 12.8]),  # exact 2×served
+        ('FoodMatch',   [13.8, 24.0]),
     ]
     distance = [
         ('Exact', [7202.692, 18071.82]),

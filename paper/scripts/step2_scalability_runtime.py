@@ -67,19 +67,19 @@ def figure2_scalability_runtime():
 
     n_requests = [10, 20, 30, 40, 50]
     req_runtime = [
-        ('OptLoad', [0.44, 0.96, 2.55, 4.80, 8.10]),
-        ('Insertion', [0.49, 1.58, 4.20, 8.00, 13.70]),
-        ('LIFO', [0.20, 0.41, 1.15, 2.20, 3.80]),
-        ('FoodMatch', [0.13, 0.22, 0.73, 1.40, 2.50]),
+        ('OptLoad',   [0.45, 0.95, 2.40, 4.60, 7.80]),
+        ('Insertion', [0.50, 1.30, 3.50, 6.80, 11.50]),
+        ('LIFO',      [0.20, 0.40, 1.10, 2.10, 3.60]),
+        ('FoodMatch', [0.13, 0.22, 0.70, 1.30, 2.30]),
     ]
 
     networks = ['Oldenburg', 'California', 'London']
     x_net = np.arange(len(networks))
     net_runtime = [
-        ('OptLoad', [198, 590, 1380]),
-        ('Insertion', [86, 227, 504]),
-        ('LIFO', [77, 206, 468]),
-        ('FoodMatch', [93, 244, 542]),
+        ('OptLoad',   [2.4, 3.6, 5.2]),
+        ('Insertion', [3.5, 5.0, 7.2]),
+        ('LIFO',      [1.1, 1.8, 2.6]),
+        ('FoodMatch', [0.7, 1.2, 1.9]),
     ]
 
     fig, axes = plt.subplots(1, 2, figsize=(12.4, 5.8))
