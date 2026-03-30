@@ -95,13 +95,13 @@ def figure2_scalability():
 
     fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6))
 
-    scatter_series(axes[0], n, served, 'Served Requests')
+    scatter_series(axes[0], n, served, 'Average Served Requests')
     add_panel_caption(axes[0], '(a) Served requests')
 
-    scatter_series(axes[1], n, lu, 'LU Cost')
+    scatter_series(axes[1], n, lu, 'Average LU Cost')
     add_panel_caption(axes[1], '(b) LU cost')
 
-    scatter_series(axes[2], n, distance, 'Distance')
+    scatter_series(axes[2], n, distance, 'Average Distance')
     add_panel_caption(axes[2], '(c) Travel distance')
 
     handles, labels = axes[0].get_legend_handles_labels()

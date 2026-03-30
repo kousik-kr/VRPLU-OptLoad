@@ -102,13 +102,13 @@ def figure1_correctness():
 
     fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6))
 
-    grouped_bars(axes[0], n, served, 'Served Requests', 'N (requests)')
+    grouped_bars(axes[0], n, served, 'Average Served Requests', 'N (requests)')
     add_panel_caption(axes[0], '(a) Served requests comparison')
 
-    grouped_bars(axes[1], n, lu, 'LU Cost', 'N (requests)')
+    grouped_bars(axes[1], n, lu, 'Average LU Cost', 'N (requests)')
     add_panel_caption(axes[1], '(b) LU cost comparison')
 
-    grouped_bars(axes[2], n, distance, 'Distance', 'N (requests)')
+    grouped_bars(axes[2], n, distance, 'Average Distance', 'N (requests)')
     add_panel_caption(axes[2], '(c) Travel distance comparison')
 
     # One shared legend for the three panels.

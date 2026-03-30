@@ -135,13 +135,13 @@ def figure7_sensitivity():
         fig.add_subplot(grid[1, 2]),
     ]
 
-    scatter_series(axes[0], cap, served, 'Served Requests', 'Capacity')
+    scatter_series(axes[0], cap, served, 'Average Served Requests', 'Capacity')
     add_panel_caption(axes[0], '(b) Served vs Capacity')
 
-    scatter_series(axes[1], cap, lu, 'LU Cost', 'Capacity')
+    scatter_series(axes[1], cap, lu, 'Average LU Cost', 'Capacity')
     add_panel_caption(axes[1], '(c) LU vs Capacity')
 
-    scatter_series(axes[2], cap, distance, 'Distance', 'Capacity')
+    scatter_series(axes[2], cap, distance, 'Average Distance', 'Capacity')
     add_panel_caption(axes[2], '(d) Distance vs Capacity')
 
     handles, labels = axes[0].get_legend_handles_labels()

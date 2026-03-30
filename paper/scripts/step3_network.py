@@ -59,7 +59,7 @@ def scatter_series(ax, x_labels, series, y_label):
 
     ax.set_xticks(x)
     ax.set_xticklabels(x_labels)
-    ax.set_xlabel('Network (N=20)', fontsize=FONT_SIZE)
+    ax.set_xlabel('Network', fontsize=FONT_SIZE)
     ax.set_ylabel(y_label, fontsize=FONT_SIZE)
     ax.tick_params(axis='both', labelsize=TICK_SIZE)
     ax.grid(True, alpha=0.25, linestyle='--')
@@ -97,13 +97,13 @@ def figure3_network():
 
     fig, axes = plt.subplots(1, 3, figsize=(16.0, 5.6))
 
-    scatter_series(axes[0], networks, served, 'Served Requests')
+    scatter_series(axes[0], networks, served, 'Average Served Requests')
     add_panel_caption(axes[0], '(a) Served requests')
 
-    scatter_series(axes[1], networks, lu, 'LU Cost')
+    scatter_series(axes[1], networks, lu, 'Average LU Cost')
     add_panel_caption(axes[1], '(b) LU cost')
 
-    scatter_series(axes[2], networks, distance, 'Distance')
+    scatter_series(axes[2], networks, distance, 'Average Distance')
     add_panel_caption(axes[2], '(c) Travel distance')
 
     handles, labels = axes[0].get_legend_handles_labels()

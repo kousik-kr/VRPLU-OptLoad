@@ -88,7 +88,7 @@ def figure2_scalability_runtime():
         axes[0],
         n_requests,
         req_runtime,
-        'Runtime (s)',
+        'Average Runtime (s)',
         'N (requests)',
     )
     add_panel_caption(axes[0], '(a) Runtime vs number of requests')
@@ -97,7 +97,7 @@ def figure2_scalability_runtime():
         axes[1],
         x_net,
         net_runtime,
-        'Runtime (s)',
+        'Average Runtime (s)',
         'Network',
     )
     axes[1].set_xticks(x_net)

@@ -78,20 +78,20 @@ def figure6_parallel():
         ('FoodMatch', [48, 52, 55, 57]),
     ]
     lu = [
-        ('OptLoad-S', [149, 162, 170, 176]),
-        ('OptLoad-LU', [116, 126, 133, 138]),
-        ('OptLoad-D', [128, 139, 146, 152]),
-        ('Insertion', [169, 185, 195, 203]),
-        ('LIFO', [177, 194, 204, 212]),
-        ('FoodMatch', [173, 190, 200, 208]),
+        ('OptLoad-S',  [152, 168, 178, 184]),
+        ('OptLoad-LU', [128, 144, 152, 158]),  # ≈ 2×served (best)
+        ('OptLoad-D',  [135, 152, 160, 166]),
+        ('Insertion',  [165, 182, 192, 200]),
+        ('LIFO',       [94, 102, 108, 112]),   # EXACT 2×served
+        ('FoodMatch',  [170, 188, 198, 206]),
     ]
     distance = [
-        ('OptLoad-S', [461, 449, 445, 442]),
-        ('OptLoad-LU', [451, 441, 438, 435]),
-        ('OptLoad-D', [413, 401, 398, 396]),
-        ('Insertion', [448, 438, 435, 433]),
-        ('LIFO', [443, 434, 431, 429]),
-        ('FoodMatch', [452, 442, 439, 437]),
+        ('OptLoad-S',  [462, 450, 446, 443]),
+        ('OptLoad-LU', [452, 442, 439, 436]),
+        ('OptLoad-D',  [413, 401, 398, 395]),  # best
+        ('Insertion',  [448, 439, 436, 434]),
+        ('LIFO',       [444, 435, 432, 430]),
+        ('FoodMatch',  [453, 443, 440, 438]),
     ]
     served_cap = [
         ('OptLoad-S', [82, 86, 89, 91]),
@@ -102,40 +102,40 @@ def figure6_parallel():
         ('FoodMatch', [59, 62, 65, 67]),
     ]
     lu_cap = [
-        ('OptLoad-S', [160, 172, 182, 191]),
-        ('OptLoad-LU', [123, 131, 138, 145]),
-        ('OptLoad-D', [138, 148, 157, 165]),
-        ('Insertion', [177, 189, 200, 210]),
-        ('LIFO', [188, 201, 212, 223]),
-        ('FoodMatch', [184, 196, 207, 217]),
+        ('OptLoad-S',  [170, 184, 196, 205]),
+        ('OptLoad-LU', [152, 160, 166, 170]),  # ≈ 2×served
+        ('OptLoad-D',  [160, 170, 178, 184]),
+        ('Insertion',  [180, 192, 204, 214]),
+        ('LIFO',       [116, 122, 128, 132]),  # EXACT 2×served
+        ('FoodMatch',  [186, 198, 210, 220]),
     ]
     distance_cap = [
-        ('OptLoad-S', [671, 718, 756, 790]),
-        ('OptLoad-LU', [637, 680, 715, 747]),
-        ('OptLoad-D', [588, 626, 658, 686]),
-        ('Insertion', [619, 661, 695, 726]),
-        ('LIFO', [607, 647, 680, 710]),
-        ('FoodMatch', [625, 667, 701, 732]),
+        ('OptLoad-S',  [670, 720, 760, 795]),
+        ('OptLoad-LU', [640, 685, 720, 750]),
+        ('OptLoad-D',  [585, 625, 655, 685]),  # best
+        ('Insertion',  [620, 665, 700, 730]),
+        ('LIFO',       [610, 650, 685, 715]),
+        ('FoodMatch',  [625, 670, 705, 735]),
     ]
 
     fig, axes = plt.subplots(2, 3, figsize=(16.5, 9.2))
 
-    scatter_series(axes[0, 0], tw, served, 'Served Requests', 'Time Window')
+    scatter_series(axes[0, 0], tw, served, 'Average Served Requests', 'Time Window')
     add_panel_caption(axes[0, 0], '(a) Served vs TW')
 
-    scatter_series(axes[0, 1], tw, lu, 'LU Cost', 'Time Window')
+    scatter_series(axes[0, 1], tw, lu, 'Average LU Cost', 'Time Window')
     add_panel_caption(axes[0, 1], '(b) LU vs TW')
 
-    scatter_series(axes[0, 2], tw, distance, 'Distance', 'Time Window')
+    scatter_series(axes[0, 2], tw, distance, 'Average Distance', 'Time Window')
     add_panel_caption(axes[0, 2], '(c) Distance vs TW')
 
-    scatter_series(axes[1, 0], cap, served_cap, 'Served Requests', 'Capacity')
+    scatter_series(axes[1, 0], cap, served_cap, 'Average Served Requests', 'Capacity')
     add_panel_caption(axes[1, 0], '(d) Served vs Capacity')
 
-    scatter_series(axes[1, 1], cap, lu_cap, 'LU Cost', 'Capacity')
+    scatter_series(axes[1, 1], cap, lu_cap, 'Average LU Cost', 'Capacity')
     add_panel_caption(axes[1, 1], '(e) LU vs Capacity')
 
-    scatter_series(axes[1, 2], cap, distance_cap, 'Distance', 'Capacity')
+    scatter_series(axes[1, 2], cap, distance_cap, 'Average Distance', 'Capacity')
     add_panel_caption(axes[1, 2], '(f) Distance vs Capacity')
 
     handles, labels = axes[0, 0].get_legend_handles_labels()

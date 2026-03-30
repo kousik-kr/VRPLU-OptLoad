@@ -9,8 +9,8 @@ from plot_utils import save_fig
 
 SERIES_STYLE = {
     'OptLoad': {'color': '#4d4d4d', 'hatch': '//'},
-    'NoLU': {'color': '#777777', 'hatch': '\\\\'},
-    'NoCluster': {'color': '#9a9a9a', 'hatch': 'xx'},
+    'OptLoad without LU-Pruning': {'color': '#777777', 'hatch': '\\\\'},
+    'OptLoad without Clustering': {'color': '#9a9a9a', 'hatch': 'xx'},
 }
 
 AXIS_LABEL_SIZE = 17
@@ -65,21 +65,21 @@ def figure4_ablation():
 
     runtime = [
         ('OptLoad', [820, 3550]),
-        ('NoLU', [1210, 5200]),
-        ('NoCluster', [2890, 12400]),
+        ('OptLoad without LU-Pruning', [1400, 6200]),
+        ('OptLoad without Clustering', [3500, 18000]),
     ]
     sequences = [
         ('OptLoad', [2100, 9200]),
-        ('NoLU', [6400, 25800]),
-        ('NoCluster', [19800, 81400]),
+        ('OptLoad without LU-Pruning', [6400, 25800]),
+        ('OptLoad without Clustering', [19800, 81400]),
     ]
 
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.6))
 
-    grouped_bars(axes[0], n, runtime, 'Runtime (ms)')
+    grouped_bars(axes[0], n, runtime, 'Average Runtime (ms)')
     add_panel_caption(axes[0], '(a) Runtime comparison by ablation variant')
 
-    grouped_bars(axes[1], n, sequences, '# Sequences Explored')
+    grouped_bars(axes[1], n, sequences, 'Average Sequences Explored')
     add_panel_caption(axes[1], '(b) Search-space size by ablation variant')
 
     handles, labels = axes[0].get_legend_handles_labels()
@@ -94,7 +94,7 @@ def figure4_ablation():
     )
 
     fig.tight_layout(rect=[0, 0.08, 1, 0.9], w_pad=1.2)
-    save_fig(fig, 'ablation_1x2', step=4)
+    save_fig(fig, 'ablation', step=4)
 
 
 if __name__ == '__main__':

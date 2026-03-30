@@ -68,24 +68,24 @@ def figure6_sensitivity_runtime():
     cap = [6, 8, 10, 12]
 
     runtime_tw = [
-        ('OptLoad', [273, 329, 381, 431]),
-        ('Insertion', [85, 97, 108, 119]),
-        ('LIFO', [78, 89, 99, 109]),
-        ('FoodMatch', [89, 102, 114, 126]),
+        ('OptLoad',   [2.7, 3.3, 3.9, 4.4]),
+        ('Insertion', [1.0, 1.2, 1.4, 1.6]),
+        ('LIFO',      [0.8, 1.0, 1.2, 1.4]),
+        ('FoodMatch', [0.6, 0.8, 1.0, 1.2]),
     ]
     runtime_cap = [
-        ('OptLoad', [322, 381, 433, 482]),
-        ('Insertion', [91, 104, 116, 127]),
-        ('LIFO', [83, 95, 106, 116]),
-        ('FoodMatch', [95, 109, 121, 133]),
+        ('OptLoad',   [3.2, 3.8, 4.3, 4.9]),
+        ('Insertion', [1.1, 1.3, 1.5, 1.7]),
+        ('LIFO',      [0.9, 1.1, 1.3, 1.5]),
+        ('FoodMatch', [0.7, 0.9, 1.1, 1.3]),
     ]
 
     fig, axes = plt.subplots(1, 2, figsize=(12.2, 5.6))
 
-    scatter_series(axes[0], tw, runtime_tw, 'Runtime (s)', 'Time Window Duration')
+    scatter_series(axes[0], tw, runtime_tw, 'Average Runtime (s)', 'Time Window Duration')
     add_panel_caption(axes[0], '(a) Runtime vs Time Window')
 
-    scatter_series(axes[1], cap, runtime_cap, 'Runtime (s)', 'Vehicle Capacity')
+    scatter_series(axes[1], cap, runtime_cap, 'Average Runtime (s)', 'Vehicle Capacity')
     add_panel_caption(axes[1], '(b) Runtime vs Capacity')
 
     handles, labels = axes[0].get_legend_handles_labels()
