@@ -67,6 +67,7 @@ def figure6_parallel():
     print('\n[Step 6] Sensitivity (Time Window + Capacity): combined served/LU/distance scatter')
 
     tw = [30, 60, 90, 120]
+    cap = [6, 8, 10, 12]
 
     served = [
         ('OptLoad-S', [69, 78, 83, 85]),
@@ -92,7 +93,6 @@ def figure6_parallel():
         ('LIFO', [443, 434, 431, 429]),
         ('FoodMatch', [452, 442, 439, 437]),
     ]
-    cap = [6, 8, 10, 12]
     served_cap = [
         ('OptLoad-S', [82, 86, 89, 91]),
         ('OptLoad-LU', [75, 79, 82, 84]),
