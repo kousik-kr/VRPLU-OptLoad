@@ -1,5 +1,0 @@
-solver_norm,capacity,served,lu_cost,distance,runtime_s
-OptLoad,6.0,0.0,1.4,14941.261999999999,9.762
-OptLoad,8.0,0.0,0.4,805.236,11.356100000000001
-OptLoad,10.0,0.6,0.6,5213.114,10.6959
-OptLoad,12.0,0.6,2.0,14340.829999999998,12.4484

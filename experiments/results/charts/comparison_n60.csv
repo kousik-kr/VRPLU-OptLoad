@@ -1,6 +1,0 @@
-Algorithm,Served_Mean,Served_Std,LU_Mean,LU_Std,Runtime_Mean_ms,Runtime_Std_ms
-Insertion,16.17,4.23,102.72,36.15,40671.98,31731.93
-OptLoad,0.00,0.00,0.00,0.00,796.20,558.62
-ExactLIFO,8.47,4.53,69.75,44.10,2610.90,1418.21
-Bazelmans,10.88,3.11,59.73,21.89,80753.68,70783.11
-FoodMatch,8.92,4.90,64.26,35.55,2662.47,1576.52

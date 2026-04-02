@@ -39,4 +39,36 @@ enum SolverType {
         }
         return DEFAULT_CLUSTERING;
     }
+
+    /**
+     * Maps a human-friendly solver name to the matching solver type.
+     */
+    public static SolverType fromName(String name) {
+        if (name == null) {
+            return DEFAULT_CLUSTERING;
+        }
+
+        switch (name.trim().toLowerCase()) {
+            case "exact":
+                return EXACT;
+            case "foodmatch":
+                return FOODMATCH;
+            case "lifostack":
+            case "lifo":
+                return LIFO_STACK;
+            case "insertion":
+                return INSERTION;
+            case "bazelmans":
+                return BAZELMANS;
+            case "nocluster":
+                return OPTLOAD_NO_CLUSTER;
+            case "nolupruning":
+                return OPTLOAD_NO_LU_PRUNING;
+            case "cluster":
+            case "optload":
+            case "default":
+            default:
+                return DEFAULT_CLUSTERING;
+        }
+    }
 }

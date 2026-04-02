@@ -39,9 +39,13 @@ public class VRPLoadingUnloadingMain {
         private static SolverType solverType = SolverType.DEFAULT_CLUSTERING;
         private static int nodeCount = 285050;  // Default to London
         private static int threadCount = 0;     // 0 = use default ForkJoinPool parallelism
+        private static double timeWindowScale = 1.0;
+        private static double capacityScale = 1.0;
+        private static String outputSuffix = "";
 
         public static void main(String[] args) throws IOException {
                 parseArguments(args);
+                validateInputFiles();
                 
                 // Set thread count for ForkJoinPool if specified
                 if (threadCount > 0) {
@@ -59,6 +63,22 @@ public class VRPLoadingUnloadingMain {
                 processQueries();
         }
 
+        private static void validateInputFiles() {
+                File nodesFile = new File(currentDirectory + "/dataset/nodes_" + nodeCount + ".txt");
+                File edgesFile = new File(currentDirectory + "/dataset/edges_" + nodeCount + ".txt");
+                File queryFile = new File(currentDirectory + "/" + QUERY_FILE_PREFIX + nodeCount + ".txt");
+
+                if (!nodesFile.exists()) {
+                        throw new IllegalArgumentException("Missing dataset file: " + nodesFile.getPath());
+                }
+                if (!edgesFile.exists()) {
+                        throw new IllegalArgumentException("Missing dataset file: " + edgesFile.getPath());
+                }
+                if (!queryFile.exists()) {
+                        throw new IllegalArgumentException("Missing query file: " + queryFile.getPath());
+                }
+        }
+
         /**
          * Parse command-line arguments to determine working directory and solver selection.
          * Arguments can include solver flags (--cluster, --insertion, etc.), node count (--nodes=N),
@@ -73,9 +93,31 @@ public class VRPLoadingUnloadingMain {
                         if (args[i].startsWith("--nodes=")) {
                                 nodeCount = Integer.parseInt(args[i].substring(8));
                                 System.out.println("Using node count: " + nodeCount);
+                        } else if (args[i].startsWith("--solver=")) {
+                                solverType = SolverType.fromName(args[i].substring(9));
+                                System.out.println(SolverFactory.describeSolver(solverType));
                         } else if (args[i].startsWith("--threads=")) {
                                 threadCount = Integer.parseInt(args[i].substring(10));
                                 System.out.println("Using thread count: " + threadCount);
+                        } else if (args[i].startsWith("--tw-scale=")) {
+                                timeWindowScale = Double.parseDouble(args[i].substring(11));
+                                if (timeWindowScale <= 0) {
+                                        throw new IllegalArgumentException("--tw-scale must be > 0");
+                                }
+                                System.out.println("Using time-window scale: " + timeWindowScale);
+                        } else if (args[i].startsWith("--capacity-scale=")) {
+                                capacityScale = Double.parseDouble(args[i].substring(17));
+                                if (capacityScale <= 0) {
+                                        throw new IllegalArgumentException("--capacity-scale must be > 0");
+                                }
+                                System.out.println("Using capacity scale: " + capacityScale);
+                        } else if (args[i].startsWith("--output-suffix=")) {
+                                outputSuffix = sanitizeSuffix(args[i].substring(16));
+                                System.out.println("Using output suffix: " + outputSuffix);
+                        } else if (args[i].startsWith("--query=")) {
+                                queryFilePath = args[i].substring(8);
+                        } else if (args[i].startsWith("--workdir=")) {
+                                currentDirectory = args[i].substring(10);
                         } else if (args[i].startsWith("--")) {
                                 solverType = SolverType.fromArg(args[i]);
                                 System.out.println(SolverFactory.describeSolver(solverType));
@@ -93,6 +135,13 @@ public class VRPLoadingUnloadingMain {
                 if (queryFilePath != null) {
                         copyQueryFile(queryFilePath);
                 }
+        }
+
+        private static String sanitizeSuffix(String suffix) {
+                if (suffix == null) {
+                        return "";
+                }
+                return suffix.trim().replaceAll("[^A-Za-z0-9_.-]", "_");
         }
         
         /**
@@ -144,8 +193,14 @@ public class VRPLoadingUnloadingMain {
                                         currentQuery.setDepot(depot);
                                         currentQuery.setTimeWindow(depotTimeWindow);
                                 } else if (line.startsWith("C") && currentQuery != null) {
-                                        currentQuery.setCapacity(parseIntAfterSpace(line));
-                                        System.out.println("Set capacity for query " + currentQuery.getID() + " to " + currentQuery.getCapacity());
+                                        int rawCapacity = parseIntAfterSpace(line);
+                                        int scaledCapacity = scaleCapacity(rawCapacity);
+                                        currentQuery.setCapacity(scaledCapacity);
+                                        if (scaledCapacity != rawCapacity) {
+                                                System.out.println("Scaled capacity for query " + currentQuery.getID() + " from " + rawCapacity + " to " + scaledCapacity);
+                                        } else {
+                                                System.out.println("Set capacity for query " + currentQuery.getID() + " to " + currentQuery.getCapacity());
+                                        }
                                 } else if (line.startsWith("S") && currentQuery != null) {
                                         addServiceToQuery(currentQuery, line);
                                 }
@@ -164,7 +219,7 @@ public class VRPLoadingUnloadingMain {
          */
         private static void processQueries() throws IOException {
                 String outputPrefix = SolverFactory.resolveOutputPrefix(solverType);
-                String outputFile = currentDirectory + "/" + outputPrefix + Graph.get_vertex_count() + ".txt";
+                String outputFile = buildOutputFile(outputPrefix);
                 boolean isOptLoad = SolverFactory.isOptLoadVariant(solverType);
 
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
@@ -191,6 +246,15 @@ public class VRPLoadingUnloadingMain {
                 System.out.println("All query processing is done.");
         }
 
+        private static String buildOutputFile(String outputPrefix) {
+                StringBuilder name = new StringBuilder(outputPrefix);
+                if (!outputSuffix.isEmpty()) {
+                        name.append(outputSuffix).append("_");
+                }
+                name.append(Graph.get_vertex_count()).append(".txt");
+                return currentDirectory + "/" + name;
+        }
+
         /**
          * Parse a service line from the query file and attach the resulting {@link Service}
          * to the provided {@link Query}. Both endpoints reuse their service object so
@@ -200,13 +264,13 @@ public class VRPLoadingUnloadingMain {
                 String[] parts = line.split(" ");
                 int[] endpoints = parseEndpoints(parts[1]);
 
-                TimeWindow start = parseTimeWindow(parts[2]);
-                TimeWindow end = parseTimeWindow(parts[3]);
+                TimeWindow start = applyTimeWindowScale(parseTimeWindow(parts[2]));
+                TimeWindow end = applyTimeWindowScale(parseTimeWindow(parts[3]));
 
                 Point startPoint = new Point(Graph.get_node(endpoints[0]), start, "Source");
                 Point endPoint = new Point(Graph.get_node(endpoints[1]), end, "Destination");
 
-                int capacity = Integer.parseInt(parts[parts.length - 1]);
+                int capacity = scaleCapacity(Integer.parseInt(parts[parts.length - 1]));
                 Service newService = new Service(startPoint, endPoint, capacity);
                 int serviceId = currentQuery.addServices(newService);
                 System.out.println("Added service " + serviceId + " to query " + currentQuery.getID() + " with endpoints " + endpoints[0] + " -> " + endpoints[1]);
@@ -265,6 +329,26 @@ public class VRPLoadingUnloadingMain {
         private static TimeWindow parseTimeWindow(String rawWindow) {
                 String[] bounds = rawWindow.split(",");
                 return new TimeWindow(Double.parseDouble(bounds[0]), Double.parseDouble(bounds[1]));
+        }
+
+        private static TimeWindow applyTimeWindowScale(TimeWindow window) {
+                if (timeWindowScale == 1.0) {
+                        return window;
+                }
+
+                double center = window.getCenter();
+                double scaledHalfWidth = ((window.getEndTime() - window.getStartTime()) * timeWindowScale) / 2.0;
+                double scaledStart = Math.max(0.0, center - scaledHalfWidth);
+                double scaledEnd = Math.min(1440.0, center + scaledHalfWidth);
+
+                if (scaledEnd <= scaledStart) {
+                        scaledEnd = scaledStart + 1.0;
+                }
+                return new TimeWindow(scaledStart, scaledEnd);
+        }
+
+        private static int scaleCapacity(int capacity) {
+                return Math.max(1, (int) Math.round(capacity * capacityScale));
         }
 
         private static int parseIntAfterSpace(String line) {

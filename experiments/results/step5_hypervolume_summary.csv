@@ -1,9 +1,0 @@
-solver,n_requests,hypervolume
-OptLoad,5,18683000.801345684
-OptLoad,10,55853795.42549324
-OptLoad,15,6071293.909928834
-OptLoad,20,61022060.18599999
-OptLoad,25,0.0
-OptLoad,30,0.0
-OptLoad,35,0.0
-OptLoad,40,58260202.07559063

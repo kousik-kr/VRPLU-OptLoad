@@ -7,9 +7,6 @@
 # BlueJ files
 *.ctxt
 
-#Text Files
-*.txt
-
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
@@ -78,8 +75,14 @@ out/
 *.swp
 *~
 
+# Python cache and virtual environments
+__pycache__/
+*.pyc
+.venv/
+
 # Output files
 Output_*.txt
+Output*.txt
 Query_*.txt
 
 # Dataset files
