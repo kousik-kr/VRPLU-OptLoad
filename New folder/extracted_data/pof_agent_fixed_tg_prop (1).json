@@ -1,0 +1,75 @@
+{
+  "image_name": "pof_agent_fixed_tg_prop (1).png",
+  "plot_family": "fairness",
+  "x_values": [
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0
+  ],
+  "x_label": "Number of categories",
+  "y_label": "Price of Fairness",
+  "y_limits": [
+    1.06,
+    1.8
+  ],
+  "y_ticks": [
+    1.2,
+    1.4,
+    1.6,
+    1.8
+  ],
+  "legend_loc": "center right",
+  "figure_size_px": [
+    486,
+    396
+  ],
+  "frame_px": {
+    "left": 88,
+    "right": 478,
+    "top": 14,
+    "bottom": 324
+  },
+  "x_positions_px": [
+    107.0,
+    195.0,
+    283.0,
+    371.0,
+    459.0
+  ],
+  "series": [
+    {
+      "name": "Average",
+      "kind": "line",
+      "color": "#1f77b4",
+      "linestyle": "-",
+      "marker": null,
+      "linewidth": 1.5,
+      "markersize": null,
+      "y": [
+        1.095806,
+        1.157871,
+        1.107742,
+        1.110129,
+        1.119677
+      ]
+    },
+    {
+      "name": "Worst",
+      "kind": "scatter",
+      "color": "#ff0000",
+      "linestyle": "None",
+      "marker": "o",
+      "linewidth": 0.0,
+      "markersize": 6.0,
+      "y": [
+        1.449097,
+        1.764194,
+        1.654387,
+        1.531253,
+        1.628129
+      ]
+    }
+  ]
+}

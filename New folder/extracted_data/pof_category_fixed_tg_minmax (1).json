@@ -1,0 +1,78 @@
+{
+  "image_name": "pof_category_fixed_tg_minmax (1).png",
+  "plot_family": "fairness",
+  "x_values": [
+    5.0,
+    10.0,
+    15.0,
+    20.0,
+    25.0,
+    30.0
+  ],
+  "x_label": "Number of agents",
+  "y_label": "Price of Fairness",
+  "y_limits": [
+    1.02,
+    1.68
+  ],
+  "y_ticks": [
+    1.2,
+    1.4,
+    1.6
+  ],
+  "legend_loc": "upper center",
+  "figure_size_px": [
+    355,
+    280
+  ],
+  "frame_px": {
+    "left": 68,
+    "right": 348,
+    "top": 5,
+    "bottom": 224
+  },
+  "x_positions_px": [
+    82.0,
+    132.0,
+    183.0,
+    234.0,
+    285.0,
+    335.0
+  ],
+  "series": [
+    {
+      "name": "Average",
+      "kind": "line",
+      "color": "#1f77b4",
+      "linestyle": "-",
+      "marker": null,
+      "linewidth": 1.5,
+      "markersize": null,
+      "y": [
+        1.080274,
+        1.062192,
+        1.068219,
+        1.053151,
+        1.071233,
+        1.059178
+      ]
+    },
+    {
+      "name": "Worst POF",
+      "kind": "scatter",
+      "color": "#ff0000",
+      "linestyle": "None",
+      "marker": "o",
+      "linewidth": 0.0,
+      "markersize": 6.0,
+      "y": [
+        1.556438,
+        1.652073,
+        1.258082,
+        1.405753,
+        1.348493,
+        1.466027
+      ]
+    }
+  ]
+}

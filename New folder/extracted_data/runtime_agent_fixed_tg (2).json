@@ -1,0 +1,93 @@
+{
+  "image_name": "runtime_agent_fixed_tg (2).png",
+  "plot_family": "runtime",
+  "x_values": [
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0
+  ],
+  "x_label": "Number of categories",
+  "y_label": "Running time",
+  "y_limits": [
+    -3.0,
+    52.0
+  ],
+  "y_ticks": [
+    0.0,
+    10.0,
+    20.0,
+    30.0,
+    40.0,
+    50.0
+  ],
+  "legend_loc": "upper left",
+  "figure_size_px": [
+    469,
+    383
+  ],
+  "frame_px": {
+    "left": 71,
+    "right": 460,
+    "top": 9,
+    "bottom": 319
+  },
+  "x_positions_px": [
+    89.222,
+    177.0,
+    265.885,
+    353.828,
+    442.0
+  ],
+  "series": [
+    {
+      "name": "PO-minEnvyGTP",
+      "kind": "line",
+      "color": "#1f77b4",
+      "linestyle": "-",
+      "marker": null,
+      "linewidth": 1.5,
+      "markersize": null,
+      "y": [
+        1.790323,
+        3.564516,
+        6.048387,
+        9.064516,
+        12.790323
+      ]
+    },
+    {
+      "name": "Brutforce",
+      "kind": "line",
+      "color": "#ff0000",
+      "linestyle": "-",
+      "marker": "o",
+      "linewidth": 1.5,
+      "markersize": 6.0,
+      "y": [
+        0.377539,
+        1.245829,
+        -0.331886,
+        5.014461,
+        49.33871
+      ]
+    },
+    {
+      "name": "GNN",
+      "kind": "line",
+      "color": "#008000",
+      "linestyle": "--",
+      "marker": null,
+      "linewidth": 1.5,
+      "markersize": null,
+      "y": [
+        4.274194,
+        8.532258,
+        14.919355,
+        21.66129,
+        30.177419
+      ]
+    }
+  ]
+}

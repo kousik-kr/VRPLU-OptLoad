@@ -1,0 +1,75 @@
+{
+  "image_name": "POF_agentsfixed (1).png",
+  "plot_family": "fairness",
+  "x_values": [
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    6.0
+  ],
+  "x_label": "Number of categories",
+  "y_label": "Price of Fairness",
+  "y_limits": [
+    1.1,
+    1.85
+  ],
+  "y_ticks": [
+    1.2,
+    1.4,
+    1.6,
+    1.8
+  ],
+  "legend_loc": "upper right",
+  "figure_size_px": [
+    495,
+    401
+  ],
+  "frame_px": {
+    "left": 97,
+    "right": 487,
+    "top": 9,
+    "bottom": 319
+  },
+  "x_positions_px": [
+    116.0,
+    204.0,
+    292.0,
+    380.0,
+    468.0
+  ],
+  "series": [
+    {
+      "name": "Average",
+      "kind": "line",
+      "color": "#1f77b4",
+      "linestyle": "-",
+      "marker": null,
+      "linewidth": 1.5,
+      "markersize": null,
+      "y": [
+        1.196774,
+        1.165323,
+        1.158065,
+        1.155645,
+        1.13629
+      ]
+    },
+    {
+      "name": "Worst",
+      "kind": "scatter",
+      "color": "#ff0000",
+      "linestyle": "None",
+      "marker": "o",
+      "linewidth": 0.0,
+      "markersize": 6.0,
+      "y": [
+        1.794355,
+        1.81371,
+        1.634677,
+        1.576613,
+        1.421774
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "image_name": "POF_clustersfixed (1).png",
+  "plot_family": "fairness",
+  "x_values": [
+    5.0,
+    10.0,
+    15.0,
+    20.0,
+    25.0,
+    30.0
+  ],
+  "x_label": "Number of agents",
+  "y_label": "Price of Fairness",
+  "y_limits": [
+    1.15,
+    1.83
+  ],
+  "y_ticks": [
+    1.2,
+    1.4,
+    1.6,
+    1.8
+  ],
+  "legend_loc": "center left",
+  "figure_size_px": [
+    497,
+    401
+  ],
+  "frame_px": {
+    "left": 97,
+    "right": 487,
+    "top": 9,
+    "bottom": 319
+  },
+  "x_positions_px": [
+    116.0,
+    186.0,
+    257.0,
+    327.0,
+    398.0,
+    468.0
+  ],
+  "series": [
+    {
+      "name": "Average",
+      "kind": "line",
+      "color": "#1f77b4",
+      "linestyle": "-",
+      "marker": null,
+      "linewidth": 1.5,
+      "markersize": null,
+      "y": [
+        1.182903,
+        1.200452,
+        1.213613,
+        1.239935,
+        1.220194,
+        1.220194
+      ]
+    },
+    {
+      "name": "Worst POF",
+      "kind": "scatter",
+      "color": "#ff0000",
+      "linestyle": "None",
+      "marker": "o",
+      "linewidth": 0.0,
+      "markersize": 6.0,
+      "y": [
+        1.612839,
+        1.748839,
+        1.645742,
+        1.797097,
+        1.516323,
+        1.783935
+      ]
+    }
+  ]
+}
